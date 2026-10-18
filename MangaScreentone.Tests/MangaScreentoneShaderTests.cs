@@ -354,8 +354,33 @@ public sealed class MangaScreentoneShaderTests
     [InlineData(14, 11, 39, 1u)]
     public void SmallRegionsOfTheTargetLevelAreFilledFromTheirSurroundingsAndTheRestStays(int width, int height, int size, uint target)
     {
+        AssertSmallRegionsFilled(Levels(width, height, 0x42u), width, height, size, target);
+    }
+
+    [Theory]
+    [InlineData(5)]
+    [InlineData(13)]
+    [InlineData(21)]
+    public void SmallRegionsFarApartAreFilledWhileTheGroupsBetweenThemHaveNoHolesToCount(int size)
+    {
+        const int width = 130;
+        const int height = 100;
+        var levels = Enumerable.Repeat(3u, width * height).ToArray();
+        foreach (var (left, top, regionWidth, regionHeight) in new[] { (9, 7, 3, 3), (118, 90, 2, 4), (64, 2, 1, 1), (3, 60, 4, 2) })
+        {
+            for (var y = top; y < top + regionHeight; y++)
+            {
+                for (var x = left; x < left + regionWidth; x++)
+                    levels[y * width + x] = 1u;
+            }
+        }
+
+        AssertSmallRegionsFilled(levels, width, height, size, 1u);
+    }
+
+    static void AssertSmallRegionsFilled(uint[] levels, int width, int height, int size, uint target)
+    {
         var device = Device();
-        var levels = Levels(width, height, 0x42u);
         var components = MangaScreentoneReference.Label(levels.Select(level => level == target ? 0u : MangaScreentoneSettings.InactiveClass).ToArray(), width, height, false);
         const float minimumRegion = 24f;
         var expectedMedian = MangaScreentoneReference.Median(levels, width, height, size, index => levels[index] == target && components.Area[components.Labels[index]] < minimumRegion);
@@ -378,7 +403,7 @@ public sealed class MangaScreentoneShaderTests
         device.For(ThreadGroupAlignment.AlignX<ComponentAreaShader>(width), ThreadGroupAlignment.AlignY<ComponentAreaShader>(height), new ComponentAreaShader(classBuffer, labels, area, width, height));
 
         device.For(width, height, new HoleMarkShader(levelBuffer, labels, area, classBuffer, width, height, target, minimumRegion));
-        device.For(width, height, new HoleCountShader(classBuffer, low, high, width, height, size / 2));
+        device.For(ThreadGroupAlignment.AlignX<HoleCountShader>(width), ThreadGroupAlignment.AlignY<HoleCountShader>(height), new HoleCountShader(classBuffer, low, high, width, height, size / 2));
         device.For(width, height, new HoleResolveShader(levelBuffer, classBuffer, low, high, output, width, height, size / 2));
 
         Assert.Equal(expected, Download(output));

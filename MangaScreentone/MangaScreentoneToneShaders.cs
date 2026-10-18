@@ -336,7 +336,7 @@ internal readonly partial struct HoleMarkShader(
     }
 }
 
-[ThreadGroupSize(DefaultThreadGroupSizes.XY)]
+[ThreadGroupSize(MangaScreentoneSettings.BlurGroupSize, MangaScreentoneSettings.BlurGroupSize, 1)]
 [GeneratedComputeShaderDescriptor]
 internal readonly partial struct HoleCountShader(
     ReadWriteBuffer<uint> marked,
@@ -353,8 +353,29 @@ internal readonly partial struct HoleCountShader(
     private readonly int height = height;
     private readonly int radius = radius;
 
+    [GroupShared(1)]
+    private static readonly int[] holeNearby = null!;
+
     public void Execute()
     {
+        if (GroupIds.Index == 0)
+            holeNearby[0] = 0;
+        Hlsl.GroupMemoryBarrierWithGroupSync();
+
+        var left = ThreadIds.X - GroupIds.X;
+        var top = ThreadIds.Y - GroupIds.Y;
+        var span = MangaScreentoneSettings.BlurGroupSize + 2 * radius;
+        for (var cell = GroupIds.Index; cell < MangaScreentoneSettings.BlurGroupSize * span; cell += MangaScreentoneSettings.BlurGroupSize * MangaScreentoneSettings.BlurGroupSize)
+        {
+            var column = left + cell % MangaScreentoneSettings.BlurGroupSize;
+            var line = top - radius + cell / MangaScreentoneSettings.BlurGroupSize;
+            if (column < width && line >= 0 && line < height && marked[line * width + column] == MangaScreentoneSettings.HoleMarker)
+                Hlsl.InterlockedOr(ref holeNearby[0], 1);
+        }
+        Hlsl.GroupMemoryBarrierWithGroupSync();
+        if (holeNearby[0] == 0)
+            return;
+
         var x = ThreadIds.X;
         var y = ThreadIds.Y;
         if (x >= width || y >= height)

@@ -469,7 +469,7 @@ internal sealed partial class MangaScreentonePipelineHost
             RecordComponents(in context, grid, grid.Classes, width, height, false, ComponentStatistic.Area);
             context.For(width, height, new HoleMarkShader(current, grid.Labels, grid.StatA, grid.Classes, width, height, target, derived.PlanMinRegion));
             context.Barrier(grid.Classes);
-            context.For(width, height, new HoleCountShader(grid.Classes, grid.StatB, grid.StatC, width, height, fillRadius));
+            ForAligned(in context, width, height, new HoleCountShader(grid.Classes, grid.StatB, grid.StatC, width, height, fillRadius));
             context.Barrier(grid.StatB);
             context.Barrier(grid.StatC);
             context.For(width, height, new HoleResolveShader(current, grid.Classes, grid.StatB, grid.StatC, next, width, height, fillRadius));
