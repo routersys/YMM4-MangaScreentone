@@ -46,6 +46,9 @@ internal static class MangaScreentoneSettings
     public const float MinimumLevelGap = 1e-3f;
     public const float MinimumScreenLines = 1f;
     public const int MaximumMedianSize = 255;
+    public const int BlurGroupSize = 8;
+    public const int MaximumGaussianRadius = 128;
+    public const int MaximumKernelLength = 2 * MaximumGaussianRadius + 1;
     public const int MaximumCanvasSize = 8192;
     public const int NoiseSeedInk = 1;
     public const int NoiseSeedFibre = 2;
@@ -54,6 +57,7 @@ internal static class MangaScreentoneSettings
     public const int ScratchHashMix = 1;
     public const int MaximumPendingSubmissions = 32;
     public const uint InactiveClass = 0xFFFFFFFFu;
+    public const uint HoleMarker = 255u;
     public const int MaximumUnionIterations = 1 << 20;
 
     public static readonly (float R, float G, float B) InkColor = (26f / 255f, 25f / 255f, 28f / 255f);
@@ -70,7 +74,7 @@ internal static class MangaScreentoneSettings
         => (int)size | 1;
 
     public static int GaussianRadius(double sigma)
-        => sigma <= 0d ? 0 : (((int)Math.Round(sigma * 8d + 1d, MidpointRounding.ToEven)) | 1) / 2;
+        => sigma <= 0d ? 0 : Math.Min((((int)Math.Round(sigma * 8d + 1d, MidpointRounding.ToEven)) | 1) / 2, MaximumGaussianRadius);
 
     public static (float White, float Black) NormalizeTonePoints(float white, float black)
     {

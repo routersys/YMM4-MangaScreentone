@@ -243,8 +243,8 @@ public sealed class MangaScreentoneShaderTests
         using var temporary = device.AllocateReadWriteBuffer<float>(source.Length);
         using var output = device.AllocateReadWriteBuffer<float>(source.Length);
 
-        device.For(width, height, new GaussianBlurShader(input, temporary, width, height, (float)sigma, radius, 0));
-        device.For(width, height, new GaussianBlurShader(temporary, output, width, height, (float)sigma, radius, 1));
+        device.For(ThreadGroupAlignment.AlignX<GaussianBlurShader>(width), ThreadGroupAlignment.AlignY<GaussianBlurShader>(height), new GaussianBlurShader(input, temporary, width, height, (float)sigma, radius, 0));
+        device.For(ThreadGroupAlignment.AlignX<GaussianBlurShader>(width), ThreadGroupAlignment.AlignY<GaussianBlurShader>(height), new GaussianBlurShader(temporary, output, width, height, (float)sigma, radius, 1));
 
         AssertClose(MangaScreentoneReference.Gaussian(source, width, height, sigma, radius), Download(output), 2e-6);
     }
@@ -281,8 +281,8 @@ public sealed class MangaScreentoneShaderTests
         using var denominator = device.AllocateReadWriteBuffer<float>(gray.Length);
         using var output = device.AllocateReadWriteBuffer<float>(gray.Length);
 
-        device.For(width, height, new MaskedBlurHorizontalShader(grayBuffer, inkBuffer, numerator, denominator, width, height, 2.5f, 10));
-        device.For(width, height, new MaskedBlurVerticalShader(numerator, denominator, output, width, height, 2.5f, 10, MangaScreentoneSettings.ValueMinWeight));
+        device.For(ThreadGroupAlignment.AlignX<MaskedBlurHorizontalShader>(width), ThreadGroupAlignment.AlignY<MaskedBlurHorizontalShader>(height), new MaskedBlurHorizontalShader(grayBuffer, inkBuffer, numerator, denominator, width, height, 2.5f, 10));
+        device.For(ThreadGroupAlignment.AlignX<MaskedBlurVerticalShader>(width), ThreadGroupAlignment.AlignY<MaskedBlurVerticalShader>(height), new MaskedBlurVerticalShader(numerator, denominator, output, width, height, 2.5f, 10, MangaScreentoneSettings.ValueMinWeight));
 
         AssertClose(MangaScreentoneReference.MaskedValue(gray, ink, width, height, 2.5, 10), Download(output), 5e-6);
     }
@@ -377,8 +377,9 @@ public sealed class MangaScreentoneShaderTests
         device.For(width, height, new ComponentFlattenShader(classBuffer, labels, area, unusedC, unusedD, unusedE, high, width, height, 0));
         device.For(ThreadGroupAlignment.AlignX<ComponentAreaShader>(width), ThreadGroupAlignment.AlignY<ComponentAreaShader>(height), new ComponentAreaShader(classBuffer, labels, area, width, height));
 
-        device.For(width, height, new HoleCountShader(levelBuffer, labels, area, low, high, width, height, size / 2, target, minimumRegion));
-        device.For(width, height, new HoleResolveShader(levelBuffer, labels, area, low, high, output, width, height, size / 2, target, minimumRegion));
+        device.For(width, height, new HoleMarkShader(levelBuffer, labels, area, classBuffer, width, height, target, minimumRegion));
+        device.For(width, height, new HoleCountShader(classBuffer, low, high, width, height, size / 2));
+        device.For(width, height, new HoleResolveShader(levelBuffer, classBuffer, low, high, output, width, height, size / 2));
 
         Assert.Equal(expected, Download(output));
     }

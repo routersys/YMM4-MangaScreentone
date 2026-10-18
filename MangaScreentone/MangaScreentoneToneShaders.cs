@@ -303,28 +303,55 @@ internal readonly partial struct ClassFromLevelShader(
 
 [ThreadGroupSize(DefaultThreadGroupSizes.XY)]
 [GeneratedComputeShaderDescriptor]
-internal readonly partial struct HoleCountShader(
+internal readonly partial struct HoleMarkShader(
     ReadWriteBuffer<uint> level,
     ReadWriteBuffer<uint> labels,
     ReadWriteBuffer<uint> area,
-    ReadWriteBuffer<uint> countLow,
-    ReadWriteBuffer<uint> countHigh,
+    ReadWriteBuffer<uint> marked,
     int width,
     int height,
-    int radius,
     uint target,
     float minRegion) : IComputeShader
 {
     private readonly ReadWriteBuffer<uint> level = level;
     private readonly ReadWriteBuffer<uint> labels = labels;
     private readonly ReadWriteBuffer<uint> area = area;
+    private readonly ReadWriteBuffer<uint> marked = marked;
+    private readonly int width = width;
+    private readonly int height = height;
+    private readonly uint target = target;
+    private readonly float minRegion = minRegion;
+
+    public void Execute()
+    {
+        var x = ThreadIds.X;
+        var y = ThreadIds.Y;
+        if (x >= width || y >= height)
+            return;
+
+        var index = y * width + x;
+        var value = level[index];
+        var hole = value == target && (float)area[(int)labels[index]] < minRegion;
+        marked[index] = hole ? MangaScreentoneSettings.HoleMarker : value;
+    }
+}
+
+[ThreadGroupSize(DefaultThreadGroupSizes.XY)]
+[GeneratedComputeShaderDescriptor]
+internal readonly partial struct HoleCountShader(
+    ReadWriteBuffer<uint> marked,
+    ReadWriteBuffer<uint> countLow,
+    ReadWriteBuffer<uint> countHigh,
+    int width,
+    int height,
+    int radius) : IComputeShader
+{
+    private readonly ReadWriteBuffer<uint> marked = marked;
     private readonly ReadWriteBuffer<uint> countLow = countLow;
     private readonly ReadWriteBuffer<uint> countHigh = countHigh;
     private readonly int width = width;
     private readonly int height = height;
     private readonly int radius = radius;
-    private readonly uint target = target;
-    private readonly float minRegion = minRegion;
 
     public void Execute()
     {
@@ -338,17 +365,14 @@ internal readonly partial struct HoleCountShader(
         var row = y * width;
         for (var offset = -radius; offset <= radius; offset++)
         {
-            var index = row + MangaScreentoneShaderMath.Clamp(x + offset, width);
-            var value = level[index];
-            if (value == target && (float)area[(int)labels[index]] < minRegion)
-                continue;
+            var value = marked[row + MangaScreentoneShaderMath.Clamp(x + offset, width)];
             if (value == 0u)
                 low += 1u;
             else if (value == 1u)
                 low += 65536u;
             else if (value == 2u)
                 high += 1u;
-            else
+            else if (value == 3u)
                 high += 65536u;
         }
         countLow[row + x] = low;
@@ -360,28 +384,22 @@ internal readonly partial struct HoleCountShader(
 [GeneratedComputeShaderDescriptor]
 internal readonly partial struct HoleResolveShader(
     ReadWriteBuffer<uint> level,
-    ReadWriteBuffer<uint> labels,
-    ReadWriteBuffer<uint> area,
+    ReadWriteBuffer<uint> marked,
     ReadWriteBuffer<uint> countLow,
     ReadWriteBuffer<uint> countHigh,
     ReadWriteBuffer<uint> output,
     int width,
     int height,
-    int radius,
-    uint target,
-    float minRegion) : IComputeShader
+    int radius) : IComputeShader
 {
     private readonly ReadWriteBuffer<uint> level = level;
-    private readonly ReadWriteBuffer<uint> labels = labels;
-    private readonly ReadWriteBuffer<uint> area = area;
+    private readonly ReadWriteBuffer<uint> marked = marked;
     private readonly ReadWriteBuffer<uint> countLow = countLow;
     private readonly ReadWriteBuffer<uint> countHigh = countHigh;
     private readonly ReadWriteBuffer<uint> output = output;
     private readonly int width = width;
     private readonly int height = height;
     private readonly int radius = radius;
-    private readonly uint target = target;
-    private readonly float minRegion = minRegion;
 
     public void Execute()
     {
@@ -392,8 +410,7 @@ internal readonly partial struct HoleResolveShader(
 
         var index = y * width + x;
         var current = level[index];
-        var hole = current == target && (float)area[(int)labels[index]] < minRegion;
-        if (!hole)
+        if (marked[index] != MangaScreentoneSettings.HoleMarker)
         {
             output[index] = current;
             return;
@@ -408,7 +425,7 @@ internal readonly partial struct HoleResolveShader(
             high += countHigh[sample];
         }
         var fill = MangaScreentoneToneMath.Median(low, high, (uint)((2 * radius + 1) * (2 * radius + 1)));
-        output[index] = fill != 255u ? fill : current;
+        output[index] = fill != MangaScreentoneSettings.HoleMarker ? fill : current;
     }
 }
 
