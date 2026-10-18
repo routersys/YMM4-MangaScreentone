@@ -272,7 +272,7 @@ internal readonly partial struct MaskedBlurVerticalShader(
     }
 }
 
-[ThreadGroupSize(DefaultThreadGroupSizes.XY)]
+[ThreadGroupSize(MangaScreentoneSettings.BlurGroupSize, MangaScreentoneSettings.BlurGroupSize, 1)]
 [GeneratedComputeShaderDescriptor]
 internal readonly partial struct BilateralShader(
     ReadWriteBuffer<float> input,
@@ -291,25 +291,37 @@ internal readonly partial struct BilateralShader(
     private readonly float spaceCoefficient = spaceCoefficient;
     private readonly float colorCoefficient = colorCoefficient;
 
+    [GroupShared(MangaScreentoneSettings.MaximumKernelLength)]
+    private static readonly int[] reach = null!;
+
     public void Execute()
     {
+        var radiusSquared = radius * radius;
+        for (var tap = GroupIds.Index; tap < 2 * radius + 1; tap += MangaScreentoneSettings.BlurGroupSize * MangaScreentoneSettings.BlurGroupSize)
+        {
+            var rowOffset = tap - radius;
+            var limit = 0;
+            while ((limit + 1) * (limit + 1) + rowOffset * rowOffset <= radiusSquared)
+                limit++;
+            reach[tap] = limit;
+        }
+        Hlsl.GroupMemoryBarrierWithGroupSync();
+
         var x = ThreadIds.X;
         var y = ThreadIds.Y;
         if (x >= width || y >= height)
             return;
 
         var center = input[y * width + x];
-        var radiusSquared = radius * radius;
         var sum = 0f;
         var weighted = 0f;
         for (var dy = -radius; dy <= radius; dy++)
         {
             var row = MangaScreentoneShaderMath.Reflect(y + dy, height) * width;
-            for (var dx = -radius; dx <= radius; dx++)
+            var limit = reach[dy + radius];
+            for (var dx = -limit; dx <= limit; dx++)
             {
                 var distance = dx * dx + dy * dy;
-                if (distance > radiusSquared)
-                    continue;
                 var value = input[row + MangaScreentoneShaderMath.Reflect(x + dx, width)];
                 var difference = value - center;
                 var weight = Hlsl.Exp(distance * spaceCoefficient + difference * difference * colorCoefficient);

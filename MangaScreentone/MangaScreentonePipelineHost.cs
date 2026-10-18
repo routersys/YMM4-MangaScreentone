@@ -341,8 +341,10 @@ internal sealed partial class MangaScreentonePipelineHost
         {
             var reading = pass == 0 ? grid.ValueA : grid.ValueB;
             var writing = pass == 0 ? grid.ValueB : grid.ValueA;
-            context.For(width, height, new BilateralShader(
-                reading, writing, width, height, derived.BilateralRadius, derived.BilateralSpaceCoefficient, derived.BilateralColorCoefficient));
+            context.For(
+                ThreadGroupAlignment.AlignX<BilateralShader>(width),
+                ThreadGroupAlignment.AlignY<BilateralShader>(height),
+                new BilateralShader(reading, writing, width, height, derived.BilateralRadius, derived.BilateralSpaceCoefficient, derived.BilateralColorCoefficient));
             context.Barrier(writing);
         }
     }

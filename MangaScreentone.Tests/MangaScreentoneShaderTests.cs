@@ -300,7 +300,7 @@ public sealed class MangaScreentoneShaderTests
         using var input = Upload(device, Floats(source));
         using var output = device.AllocateReadWriteBuffer<float>(source.Length);
 
-        device.For(width, height, new BilateralShader(input, output, width, height, radius, (float)space, (float)color));
+        device.For(ThreadGroupAlignment.AlignX<BilateralShader>(width), ThreadGroupAlignment.AlignY<BilateralShader>(height), new BilateralShader(input, output, width, height, radius, (float)space, (float)color));
 
         AssertClose(MangaScreentoneReference.Bilateral(source, width, height, radius, space, color), Download(output), 5e-6);
     }
