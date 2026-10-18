@@ -1,3 +1,48 @@
 Key,Parameter,ja-jp,en-us,zh-cn,zh-tw,ko-kr,es-es,ar-sa,id-id
-MangaScreentone,,MangaScreentone,MangaScreentone,MangaScreentone,MangaScreentone,MangaScreentone,MangaScreentone,MangaScreentone,MangaScreentone
+MangaScreentone,,漫画（スクリーントーン）,Manga (Screentone),漫画（网点纸）,漫畫（網點紙）,만화(스크린톤),Manga (tramas),مانغا (سكرين تون),Manga (Screentone)
 UpdateAvailableMessage,,新しいバージョン {0} が公開されています。,A new version {0} is available.,已发布新版本 {0}。,已發布新版本 {0}。,새 버전 {0}이(가) 공개되었습니다.,La nueva versión {0} está disponible.,الإصدار الجديد {0} متاح الآن.,Versi baru {0} telah tersedia.
+TagManga,,漫画,Manga,漫画,漫畫,만화,Manga,مانغا,Manga
+TagMonochrome,,モノクロ,Monochrome,单色,單色,모노크롬,Monocromo,أحادي اللون,Monokrom
+TagScreentone,,スクリーントーン,Screentone,网点纸,網點紙,스크린톤,Trama,ظل نقطي,Screentone
+BasicGroup,,基本,Basic,基本,基本,기본,Básico,أساسي,Dasar
+ToneGroup,,トーン,Tone,网点,網點,톤,Tono,الظلال,Nada
+LevelsGroup,,レベル補正,Levels,色阶,色階,레벨 보정,Niveles,المستويات,Level
+PageGroup,,紙面,Page,纸面,紙面,지면,Página,الصفحة,Halaman
+Amount,,強さ,Amount,强度,強度,강도,Intensidad,الشدة,Intensitas
+AmountDescription,,漫画への変換の合成量です,Blend amount of the manga conversion over the source,漫画效果与原图像的混合量,漫畫效果與原圖像的混合量,만화 변환의 합성량입니다,Cantidad de mezcla de la conversión a manga sobre la imagen,مقدار مزج التحويل إلى مانغا فوق الصورة,Jumlah pencampuran konversi manga di atas citra
+ScreenLines,,網点の細かさ,Screen Lines,网点密度,網點密度,망점 조밀도,Líneas de trama,كثافة النقاط,Garis Titik
+ScreenLinesDescription,,画像の横幅に並ぶ網点の行数です。120で粗く、200で標準、300で細かくなります。解像度が変わっても同じ見た目になります,"Rows of dots across the image width. 120 is coarse, 200 is standard and 300 is fine. The look stays the same at any resolution",沿图像宽度排列的网点行数。120为粗，200为标准，300为细。分辨率改变时外观保持一致,沿圖像寬度排列的網點行數。120為粗，200為標準，300為細。解析度改變時外觀保持一致,"이미지 가로 폭에 늘어서는 망점의 줄 수입니다. 120은 거칠고 200은 표준, 300은 곱게 나옵니다. 해상도가 달라져도 같은 모습이 됩니다","Filas de puntos a lo ancho de la imagen. 120 es grueso, 200 estándar y 300 fino. El aspecto no cambia con la resolución",عدد صفوف النقاط على عرض الصورة. 120 خشنة و200 قياسية و300 ناعمة. يبقى المظهر نفسه مع أي دقة,"Jumlah baris titik sepanjang lebar citra. 120 kasar, 200 standar, dan 300 halus. Tampilan tetap sama pada resolusi berapa pun"
+WhitePoint,,白点,White Point,白点,白點,흰색 기준점,Punto blanco,نقطة البياض,Titik Putih
+WhitePointDescription,,これより明るい部分を紙の白にします。下げるほどトーンが消えます,Areas brighter than this become paper white. Lowering it clears more tone,比此更亮的部分变为纸张的白色。调低会消除更多网点,比此更亮的部分變為紙張的白色。調低會消除更多網點,이보다 밝은 부분은 종이의 흰색이 됩니다. 낮출수록 톤이 많이 사라집니다,Las zonas más claras que este valor pasan a blanco papel. Al bajarlo se elimina más trama,المناطق الأفتح من هذه القيمة تصبح بيضاء كالورق. كلما خفضتها اختفت ظلال أكثر,Area yang lebih terang dari nilai ini menjadi putih kertas. Menurunkannya menghapus lebih banyak nada
+BlackPoint,,黒点,Black Point,黑点,黑點,검정 기준점,Punto negro,نقطة السواد,Titik Hitam
+BlackPointDescription,,これより暗い部分をベタにします。上げるほどベタが増えます,Areas darker than this become solid black. Raising it adds more solid black,比此更暗的部分变为纯黑。调高会增加纯黑,比此更暗的部分變為純黑。調高會增加純黑,이보다 어두운 부분은 검은색으로 칠해집니다. 높일수록 검은 면이 늘어납니다,Las zonas más oscuras que este valor pasan a negro sólido. Al subirlo aumenta el negro sólido,المناطق الأغمق من هذه القيمة تصبح سوداء بالكامل. كلما رفعتها زادت المساحات السوداء,Area yang lebih gelap dari nilai ini menjadi hitam pekat. Menaikkannya menambah hitam pekat
+LightTone,,薄いトーン,Light Tone,浅色网点,淺色網點,옅은 톤,Trama clara,الظل الفاتح,Nada Terang
+LightToneDescription,,薄いトーンで網点が占める割合です,Share of the area covered by dots in the light tone,浅色网点所占的面积比例,淺色網點所佔的面積比例,옅은 톤에서 망점이 차지하는 비율입니다,Proporción del área cubierta por puntos en la trama clara,نسبة المساحة التي تغطيها النقاط في الظل الفاتح,Proporsi luas yang tertutup titik pada nada terang
+DarkTone,,濃いトーン,Dark Tone,深色网点,深色網點,짙은 톤,Trama oscura,الظل الداكن,Nada Gelap
+DarkToneDescription,,濃いトーンで網点が占める割合です,Share of the area covered by dots in the dark tone,深色网点所占的面积比例,深色網點所佔的面積比例,짙은 톤에서 망점이 차지하는 비율입니다,Proporción del área cubierta por puntos en la trama oscura,نسبة المساحة التي تغطيها النقاط في الظل الداكن,Proporsi luas yang tertutup titik pada nada gelap
+Gradation,,グラデーション,Gradation,渐变,漸層,그러데이션,Degradado,التدرج,Gradasi
+GradationDescription,,なめらかに変わる影を、段差ではなくグラデーショントーンで表します。0で面だけになります,Draws smoothly changing shadows as a gradation tone instead of flat steps. At 0 only flat areas remain,将平滑变化的阴影以渐变网点表现，而不是平坦的色阶。为0时只保留平坦的色块,將平滑變化的陰影以漸層網點表現，而不是平坦的色階。為0時只保留平坦的色塊,부드럽게 변하는 그림자를 계단이 아니라 그러데이션 톤으로 표현합니다. 0이면 평평한 면만 남습니다,Dibuja las sombras de cambio suave como una trama degradada en lugar de escalones planos. Con 0 solo quedan zonas planas,يرسم الظلال المتغيرة بسلاسة كظل متدرج بدلًا من درجات مسطحة. عند 0 تبقى المساحات المسطحة فقط,"Menggambar bayangan yang berubah halus sebagai nada gradasi, bukan anak tangga datar. Pada 0 hanya area datar yang tersisa"
+WhiteLines,,白抜き,White Lines,白线镂空,白線鏤空,흰 선,Líneas blancas,الخطوط البيضاء,Garis Putih
+WhiteLinesDescription,,ベタの中の主な線を、細い白線で抜きます,Cuts the main lines inside solid black out as thin white lines,在纯黑区域内以细白线镂出主要线条,在純黑區域內以細白線鏤出主要線條,검은 면 안의 주요 선을 가는 흰 선으로 남깁니다,Recorta las líneas principales dentro del negro sólido como finas líneas blancas,يقتطع الخطوط الرئيسية داخل الأسود الكامل كخطوط بيضاء رفيعة,Melubangi garis utama di dalam hitam pekat menjadi garis putih tipis
+BlackLevel,,黒レベル,Black Level,黑色阶,黑色階,검정 레벨,Nivel de negro,مستوى الأسود,Level Hitam
+BlackLevelDescription,,これより暗い入力を黒にします,Input darker than this becomes black,比此更暗的输入变为黑色,比此更暗的輸入變為黑色,이보다 어두운 입력은 검정이 됩니다,La entrada más oscura que este valor pasa a negro,المدخلات الأغمق من هذه القيمة تصبح سوداء,Masukan yang lebih gelap dari nilai ini menjadi hitam
+WhiteLevel,,白レベル,White Level,白色阶,白色階,흰색 레벨,Nivel de blanco,مستوى الأبيض,Level Putih
+WhiteLevelDescription,,これより明るい入力を白にします。肌や明るい髪にトーンが残るときは下げます,Input brighter than this becomes white. Lower it when tone remains on skin or light hair,比此更亮的输入变为白色。皮肤或浅色头发上残留网点时请调低,比此更亮的輸入變為白色。皮膚或淺色頭髮上殘留網點時請調低,이보다 밝은 입력은 흰색이 됩니다. 피부나 밝은 머리카락에 톤이 남으면 낮춥니다,La entrada más clara que este valor pasa a blanco. Bájalo si queda trama en la piel o en el pelo claro,المدخلات الأفتح من هذه القيمة تصبح بيضاء. اخفضه إذا بقي ظل على البشرة أو الشعر الفاتح,Masukan yang lebih terang dari nilai ini menjadi putih. Turunkan jika nada masih tersisa pada kulit atau rambut terang
+Gamma,,ガンマ,Gamma,伽马,伽瑪,감마,Gamma,غاما,Gamma
+GammaDescription,,1より大きいと中間調が明るくなります,Values above 1 brighten the mid tones,大于1时中间调变亮,大於1時中間調變亮,1보다 크면 중간 톤이 밝아집니다,Con valores superiores a 1 se aclaran los tonos medios,القيم الأكبر من 1 تفتّح الدرجات المتوسطة,Nilai di atas 1 mencerahkan nada tengah
+Border,,枠線,Border,边框,邊框,테두리,Borde,الإطار,Bingkai
+BorderDescription,,コマの枠線の太さです。横幅1024画素のときの画素数で指定します,"Thickness of the panel border, in pixels at a width of 1024",分格边框的粗细，以宽度1024时的像素数指定,分格邊框的粗細，以寬度1024時的像素數指定,컷 테두리의 굵기입니다. 가로 폭 1024일 때의 픽셀 수로 지정합니다,"Grosor del borde de la viñeta, en píxeles para un ancho de 1024",سُمك إطار اللوحة، بالبكسل عند عرض 1024,"Ketebalan bingkai panel, dalam piksel pada lebar 1024"
+Margin,,余白,Margin,页边距,頁邊距,여백,Margen,الهامش,Margin
+MarginDescription,,コマの周りに足す紙の余白です。横幅1024画素のときの画素数で指定します,"Paper margin added around the panel, in pixels at a width of 1024",分格周围添加的纸张空白，以宽度1024时的像素数指定,分格周圍新增的紙張空白，以寬度1024時的像素數指定,컷 둘레에 더하는 종이 여백입니다. 가로 폭 1024일 때의 픽셀 수로 지정합니다,"Margen de papel añadido alrededor de la viñeta, en píxeles para un ancho de 1024",هامش الورق المضاف حول اللوحة، بالبكسل عند عرض 1024,"Margin kertas yang ditambahkan di sekitar panel, dalam piksel pada lebar 1024"
+Paper,,用紙,Paper,纸张,紙張,용지,Papel,الورق,Kertas
+PaperDescription,,用紙の色です。透明にすると、インクだけを残します,Color of the paper. Transparent keeps only the ink,纸张的颜色。选择透明时只保留墨迹,紙張的顏色。選擇透明時只保留墨跡,용지의 색입니다. 투명으로 하면 잉크만 남습니다,Color del papel. Con Transparente solo se conserva la tinta,لون الورق. عند اختيار الشفاف يبقى الحبر فقط,"Warna kertas. Jika Transparan dipilih, hanya tinta yang tersisa"
+PaperWhite,,白,White,白色,白色,흰색,Blanco,أبيض,Putih
+PaperWhiteDescription,,純白の紙です,Pure white paper,纯白的纸,純白的紙,순백의 종이입니다,Papel blanco puro,ورق أبيض نقي,Kertas putih murni
+PaperOffWhite,,生成り,Off-white,米白,米白,아이보리,Blanco roto,أبيض مائل للصفرة,Putih Gading
+PaperOffWhiteDescription,,わずかに黄みのある白の紙です,White paper with a slight yellow tint,略带黄色的白纸,略帶黃色的白紙,약간 누런 기가 도는 흰 종이입니다,Papel blanco con un ligero tono amarillo,ورق أبيض بدرجة صفراء خفيفة,Kertas putih dengan sedikit rona kuning
+PaperCream,,クリーム,Cream,奶油色,奶油色,크림색,Crema,كريمي,Krem
+PaperCreamDescription,,黄みの強い紙です,Paper with a stronger yellow tint,黄色更明显的纸,黃色更明顯的紙,누런 기가 더 강한 종이입니다,Papel con un tono amarillo más marcado,ورق بدرجة صفراء أوضح,Kertas dengan rona kuning yang lebih kuat
+PaperTransparent,,透明,Transparent,透明,透明,투명,Transparente,شفاف,Transparan
+PaperTransparentDescription,,紙を描かず、インクだけを残します,Draws no paper and keeps only the ink,不绘制纸张，只保留墨迹,不繪製紙張，只保留墨跡,종이를 그리지 않고 잉크만 남깁니다,No dibuja el papel y conserva solo la tinta,لا يرسم الورق ويُبقي الحبر فقط,Tidak menggambar kertas dan hanya menyisakan tinta
+Ink,,インクの質感,Ink Texture,墨迹质感,墨跡質感,잉크 질감,Textura de tinta,ملمس الحبر,Tekstur Tinta
+InkDescription,,インクの縁のにじみと、ベタのむらです。0で純粋な白と黒になります,Softness of the ink edges and unevenness of solid blacks. At 0 the result is pure black and white,墨迹边缘的柔和程度与纯黑区域的不均匀感。为0时为纯粹的黑白,墨跡邊緣的柔和程度與純黑區域的不均勻感。為0時為純粹的黑白,잉크 가장자리의 번짐과 검은 면의 얼룩입니다. 0이면 순수한 흰색과 검은색이 됩니다,Suavidad de los bordes de la tinta y desigualdad de los negros sólidos. Con 0 el resultado es blanco y negro puros,نعومة حواف الحبر وعدم انتظام الأسود الكامل. عند 0 تكون النتيجة أبيض وأسود نقيين,Kelembutan tepi tinta dan ketidakmerataan hitam pekat. Pada 0 hasilnya hitam putih murni
