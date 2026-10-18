@@ -204,4 +204,79 @@ public sealed class MangaScreentoneSettingsTests
     {
         Assert.Equal(expected, MangaScreentoneSettings.Derive(1024, 768, Parameters(margin: margin)).MarginPixels);
     }
+
+    public static readonly TheoryData<string, double> UpstreamConstants = new()
+    {
+        { nameof(MangaScreentoneSettings.SolidBlurSigma), 1.5 },
+        { nameof(MangaScreentoneSettings.SolidThreshold), 0.22 },
+        { nameof(MangaScreentoneSettings.LineBlurSigma), 0.7 },
+        { nameof(MangaScreentoneSettings.LineMeanSize), 15 },
+        { nameof(MangaScreentoneSettings.LineContrast), 0.07 },
+        { nameof(MangaScreentoneSettings.LineCeiling), 0.65 },
+        { nameof(MangaScreentoneSettings.StrokeMinLength), 10 },
+        { nameof(MangaScreentoneSettings.StrokeMinArea), 12 },
+        { nameof(MangaScreentoneSettings.StrokeFillRatio), 0.6 },
+        { nameof(MangaScreentoneSettings.StrokeFillBias), 40 },
+        { nameof(MangaScreentoneSettings.StrokeLargeArea), 400 },
+        { nameof(MangaScreentoneSettings.InkMinArea), 6 },
+        { nameof(MangaScreentoneSettings.ValueBlurSigma), 2.5 },
+        { nameof(MangaScreentoneSettings.ValueMinWeight), 0.001 },
+        { nameof(MangaScreentoneSettings.BilateralWindow), 9 },
+        { nameof(MangaScreentoneSettings.BilateralSigmaColor), 0.1 },
+        { nameof(MangaScreentoneSettings.BilateralSigmaSpace), 9 },
+        { nameof(MangaScreentoneSettings.PlanMedianSize), 11 },
+        { nameof(MangaScreentoneSettings.PlanFillMedianSize), 21 },
+        { nameof(MangaScreentoneSettings.PlanMinRegion), 600 },
+        { nameof(MangaScreentoneSettings.SpreadBlurSigma), 3 },
+        { nameof(MangaScreentoneSettings.SpreadFloor), 0.03 },
+        { nameof(MangaScreentoneSettings.SpreadRange), 0.05 },
+        { nameof(MangaScreentoneSettings.SpreadSmoothSigma), 4 },
+        { nameof(MangaScreentoneSettings.BetaSize), 3 },
+        { nameof(MangaScreentoneSettings.CutMinLength), 40 },
+        { nameof(MangaScreentoneSettings.CutErodeThreshold), 1.6 },
+    };
+
+    [Theory]
+    [MemberData(nameof(UpstreamConstants))]
+    public void TheAlgorithmConstantsKeepTheUpstreamValues(string name, double expected)
+    {
+        var field = typeof(MangaScreentoneSettings).GetField(name)!;
+
+        Assert.Equal(expected, Convert.ToDouble(field.GetRawConstantValue(), System.Globalization.CultureInfo.InvariantCulture), 5);
+    }
+
+    public static readonly TheoryData<string, double> PageTextureConstants = new()
+    {
+        { nameof(MangaScreentoneSettings.InkSpreadSigma), 0.6 },
+        { nameof(MangaScreentoneSettings.InkSpreadFloor), 0.35 },
+        { nameof(MangaScreentoneSettings.InkSpreadRange), 0.4 },
+        { nameof(MangaScreentoneSettings.InkMottleDepth), 0.05 },
+        { nameof(MangaScreentoneSettings.InkMottleCoarse), 64 },
+        { nameof(MangaScreentoneSettings.InkMottleFine), 16 },
+        { nameof(MangaScreentoneSettings.InkMottleFineWeight), 0.5 },
+        { nameof(MangaScreentoneSettings.FibreCoarse), 3 },
+        { nameof(MangaScreentoneSettings.FibreFine), 1 },
+        { nameof(MangaScreentoneSettings.FibreFineWeight), 0.6 },
+        { nameof(MangaScreentoneSettings.NoiseSeedInk), 1 },
+        { nameof(MangaScreentoneSettings.NoiseSeedFibre), 2 },
+    };
+
+    [Theory]
+    [MemberData(nameof(PageTextureConstants))]
+    public void ThePageTextureConstantsStayFixed(string name, double expected)
+    {
+        var field = typeof(MangaScreentoneSettings).GetField(name)!;
+
+        Assert.Equal(expected, Convert.ToDouble(field.GetRawConstantValue(), System.Globalization.CultureInfo.InvariantCulture), 5);
+    }
+
+    [Fact]
+    public void TheInkIsANearBlackThatLeansTowardBlue()
+    {
+        var (red, green, blue) = MangaScreentoneSettings.InkColor;
+
+        Assert.Equal(26f / 255f, red, 6);
+        Assert.Equal(25f / 255f, green, 6);
+        Assert.Equal(28f / 255f, blue, 6);
+    }
 }
