@@ -5,6 +5,12 @@ namespace MangaScreentone;
 
 internal static class MangaScreentoneShaderMath
 {
+    public const float TwoPi = 6.2831855f;
+    public const float Sqrt3 = 1.7320508f;
+    public const uint LaneBits = 16u;
+    public const uint LaneUnit = 1u << 16;
+    public const uint LaneMask = LaneUnit - 1u;
+
     public static int Reflect(int index, int length)
     {
         if (index >= 0 && index < length)
@@ -49,7 +55,7 @@ internal static class MangaScreentoneShaderMath
     {
         var key = ((uint)x * 0x9E3779B9u) ^ ((uint)y * 0x85EBCA6Bu) ^ (seed * 0xC2B2AE35u) ^ salt;
         var sum = Hash01(key) + Hash01(key ^ 0x27D4EB2Fu) + Hash01(key ^ 0x165667B1u) + Hash01(key ^ 0x1B873593u);
-        return (sum - 2f) * 1.7320508f;
+        return (sum - 2f) * Sqrt3;
     }
 
     public static float CubicWeight(int tap, float t)
@@ -100,5 +106,27 @@ internal static class MangaScreentoneShaderMath
             value += wy * line;
         }
         return value;
+    }
+
+    public static uint Median(uint low, uint high, uint total)
+    {
+        var threshold = (total + 1u) / 2u;
+        var level0 = low & LaneMask;
+        var level1 = low >> (int)LaneBits;
+        var level2 = high & LaneMask;
+        var level3 = high >> (int)LaneBits;
+        var cumulative = level0;
+        if (cumulative >= threshold)
+            return 0u;
+        cumulative += level1;
+        if (cumulative >= threshold)
+            return 1u;
+        cumulative += level2;
+        if (cumulative >= threshold)
+            return 2u;
+        cumulative += level3;
+        if (cumulative >= threshold)
+            return 3u;
+        return 255u;
     }
 }

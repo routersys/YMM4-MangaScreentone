@@ -60,6 +60,10 @@ internal static class MangaScreentoneSettings
     public const int MaximumCanvasSize = 8192;
     public const int NoiseSeedInk = 1;
     public const int NoiseSeedFibre = 2;
+    public const uint NoiseSaltInkCoarse = 0x51ED270Bu;
+    public const uint NoiseSaltInkFine = 0x2C1B3C6Du;
+    public const uint NoiseSaltFibreCoarse = 0x297A2D39u;
+    public const uint NoiseSaltFibreFine = 0x68E31DA4u;
     public const int ScratchLength = 8;
     public const int ScratchHashSum = 0;
     public const int ScratchHashMix = 1;

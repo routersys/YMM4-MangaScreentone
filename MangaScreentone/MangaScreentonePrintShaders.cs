@@ -226,7 +226,7 @@ internal readonly partial struct PrintShader(
 
                 var u = (sampleX * cosine + sampleY * sine) * scale;
                 var v = (-sampleX * sine + sampleY * cosine) * scale;
-                var spot = 1f - (Hlsl.Cos(6.2831855f * Hlsl.Frac(u)) + Hlsl.Cos(6.2831855f * Hlsl.Frac(v)) + 2f) * 0.25f;
+                var spot = 1f - (Hlsl.Cos(MangaScreentoneShaderMath.TwoPi * Hlsl.Frac(u)) + Hlsl.Cos(MangaScreentoneShaderMath.TwoPi * Hlsl.Frac(v)) + 2f) * 0.25f;
                 if (spot < coverage)
                     dots++;
             }

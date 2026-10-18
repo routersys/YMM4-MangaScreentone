@@ -227,11 +227,11 @@ internal readonly partial struct MedianCountShader(
             if (value == 0u)
                 low += 1u;
             else if (value == 1u)
-                low += 65536u;
+                low += MangaScreentoneShaderMath.LaneUnit;
             else if (value == 2u)
                 high += 1u;
             else
-                high += 65536u;
+                high += MangaScreentoneShaderMath.LaneUnit;
         }
         countLow[row + x] = low;
         countHigh[row + x] = high;
@@ -270,7 +270,7 @@ internal readonly partial struct MedianResolveShader(
             low += countLow[index];
             high += countHigh[index];
         }
-        output[y * width + x] = MangaScreentoneToneMath.Median(low, high, (uint)((2 * radius + 1) * (2 * radius + 1)));
+        output[y * width + x] = MangaScreentoneShaderMath.Median(low, high, (uint)((2 * radius + 1) * (2 * radius + 1)));
     }
 }
 
@@ -369,11 +369,11 @@ internal readonly partial struct HoleCountShader(
             if (value == 0u)
                 low += 1u;
             else if (value == 1u)
-                low += 65536u;
+                low += MangaScreentoneShaderMath.LaneUnit;
             else if (value == 2u)
                 high += 1u;
             else if (value == 3u)
-                high += 65536u;
+                high += MangaScreentoneShaderMath.LaneUnit;
         }
         countLow[row + x] = low;
         countHigh[row + x] = high;
@@ -424,7 +424,7 @@ internal readonly partial struct HoleResolveShader(
             low += countLow[sample];
             high += countHigh[sample];
         }
-        var fill = MangaScreentoneToneMath.Median(low, high, (uint)((2 * radius + 1) * (2 * radius + 1)));
+        var fill = MangaScreentoneShaderMath.Median(low, high, (uint)((2 * radius + 1) * (2 * radius + 1)));
         output[index] = fill != MangaScreentoneSettings.HoleMarker ? fill : current;
     }
 }
@@ -471,30 +471,5 @@ internal readonly partial struct SpreadResolveShader(
         var variance = Hlsl.Max(meanSquare - mean * mean, 0f);
         var deviation = Hlsl.Sqrt(variance) / 255f;
         output[index] = Hlsl.Saturate((deviation - floor) / range);
-    }
-}
-
-internal static class MangaScreentoneToneMath
-{
-    public static uint Median(uint low, uint high, uint total)
-    {
-        var threshold = (total + 1u) / 2u;
-        var level0 = low & 65535u;
-        var level1 = low >> 16;
-        var level2 = high & 65535u;
-        var level3 = high >> 16;
-        var cumulative = level0;
-        if (cumulative >= threshold)
-            return 0u;
-        cumulative += level1;
-        if (cumulative >= threshold)
-            return 1u;
-        cumulative += level2;
-        if (cumulative >= threshold)
-            return 2u;
-        cumulative += level3;
-        if (cumulative >= threshold)
-            return 3u;
-        return 255u;
     }
 }

@@ -91,8 +91,8 @@ internal readonly partial struct PanelShader(
             coverage = Hlsl.Saturate((coverage - MangaScreentoneSettings.InkSpreadFloor) / MangaScreentoneSettings.InkSpreadRange);
             if (coverage > 0f)
             {
-                var mottle = MangaScreentoneShaderMath.CubicNoise(x, y, canvasWidth, canvasHeight, mottleCoarse, MangaScreentoneSettings.NoiseSeedInk, 0x51ED270Bu)
-                    + MangaScreentoneSettings.InkMottleFineWeight * MangaScreentoneShaderMath.CubicNoise(x, y, canvasWidth, canvasHeight, mottleFine, MangaScreentoneSettings.NoiseSeedInk, 0x2C1B3C6Du);
+                var mottle = MangaScreentoneShaderMath.CubicNoise(x, y, canvasWidth, canvasHeight, mottleCoarse, MangaScreentoneSettings.NoiseSeedInk, MangaScreentoneSettings.NoiseSaltInkCoarse)
+                    + MangaScreentoneSettings.InkMottleFineWeight * MangaScreentoneShaderMath.CubicNoise(x, y, canvasWidth, canvasHeight, mottleFine, MangaScreentoneSettings.NoiseSeedInk, MangaScreentoneSettings.NoiseSaltInkFine);
                 coverage *= 1f - MangaScreentoneSettings.InkMottleDepth * inkStrength * (0.5f + 0.5f * Hlsl.Tanh(mottle));
             }
         }
@@ -109,8 +109,8 @@ internal readonly partial struct PanelShader(
         var grain = 0f;
         if (fibre > 0f)
         {
-            grain = fibre * (MangaScreentoneShaderMath.CubicNoise(x, y, canvasWidth, canvasHeight, 3, MangaScreentoneSettings.NoiseSeedFibre, 0x297A2D39u)
-                + MangaScreentoneSettings.FibreFineWeight * MangaScreentoneShaderMath.CubicNoise(x, y, canvasWidth, canvasHeight, 1, MangaScreentoneSettings.NoiseSeedFibre, 0x68E31DA4u));
+            grain = fibre * (MangaScreentoneShaderMath.CubicNoise(x, y, canvasWidth, canvasHeight, (int)MangaScreentoneSettings.FibreCoarse, MangaScreentoneSettings.NoiseSeedFibre, MangaScreentoneSettings.NoiseSaltFibreCoarse)
+                + MangaScreentoneSettings.FibreFineWeight * MangaScreentoneShaderMath.CubicNoise(x, y, canvasWidth, canvasHeight, (int)MangaScreentoneSettings.FibreFine, MangaScreentoneSettings.NoiseSeedFibre, MangaScreentoneSettings.NoiseSaltFibreFine));
         }
         var open = 1f - coverage;
         output[ThreadIds.XY] = new Float4(
