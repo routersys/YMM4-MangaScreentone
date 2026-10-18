@@ -458,4 +458,73 @@ public sealed class MangaScreentoneEffectProcessorTests
 
         Assert.ThrowsAny<Exception>(() => processor.Update(null!));
     }
+
+    static readonly MangaScreentoneSettings.Parameters DefaultParameters = new(200f, 0.8f, 0.3f, 0.18f, 0.42f, 1f, true, 0.2f, 0.7f, 1.3f, 5f, 0f, MangaScreentonePaper.White, 0.5f);
+
+    public static readonly TheoryData<string, Action<MangaScreentoneEffect>> ShownChanges = new()
+    {
+        { nameof(MangaScreentoneEffect.ScreenLines), effect => effect.ScreenLines.Values[0].Value = 90d },
+        { nameof(MangaScreentoneEffect.WhitePoint), effect => effect.WhitePoint.Values[0].Value = 60d },
+        { nameof(MangaScreentoneEffect.BlackPoint), effect => effect.BlackPoint.Values[0].Value = 50d },
+        { nameof(MangaScreentoneEffect.LightTone), effect => effect.LightTone.Values[0].Value = 60d },
+        { nameof(MangaScreentoneEffect.DarkTone), effect => effect.DarkTone.Values[0].Value = 90d },
+        { nameof(MangaScreentoneEffect.Gradation), effect => effect.Gradation.Values[0].Value = 40d },
+        { nameof(MangaScreentoneEffect.WhiteLines), effect => effect.WhiteLines = false },
+        { nameof(MangaScreentoneEffect.BlackLevel), effect => effect.BlackLevel.Values[0].Value = 40d },
+        { nameof(MangaScreentoneEffect.WhiteLevel), effect => effect.WhiteLevel.Values[0].Value = 90d },
+        { nameof(MangaScreentoneEffect.Gamma), effect => effect.Gamma.Values[0].Value = 2d },
+        { nameof(MangaScreentoneEffect.Border), effect => effect.Border.Values[0].Value = 20d },
+        { nameof(MangaScreentoneEffect.Margin), effect => effect.Margin.Values[0].Value = 80d },
+        { nameof(MangaScreentoneEffect.Paper), effect => effect.Paper = MangaScreentonePaper.Cream },
+        { nameof(MangaScreentoneEffect.Ink), effect => effect.Ink.Values[0].Value = 70d },
+    };
+
+    static readonly Dictionary<string, MangaScreentoneSettings.Parameters> ShownParameters = new()
+    {
+        [nameof(MangaScreentoneEffect.ScreenLines)] = DefaultParameters with { ScreenLines = 90f },
+        [nameof(MangaScreentoneEffect.WhitePoint)] = DefaultParameters with { WhitePoint = 0.6f },
+        [nameof(MangaScreentoneEffect.BlackPoint)] = DefaultParameters with { BlackPoint = 0.5f },
+        [nameof(MangaScreentoneEffect.LightTone)] = DefaultParameters with { LightTone = 0.6f },
+        [nameof(MangaScreentoneEffect.DarkTone)] = DefaultParameters with { DarkTone = 0.9f },
+        [nameof(MangaScreentoneEffect.Gradation)] = DefaultParameters with { Gradation = 0.4f },
+        [nameof(MangaScreentoneEffect.WhiteLines)] = DefaultParameters with { WhiteLines = false },
+        [nameof(MangaScreentoneEffect.BlackLevel)] = DefaultParameters with { BlackLevel = 0.4f },
+        [nameof(MangaScreentoneEffect.WhiteLevel)] = DefaultParameters with { WhiteLevel = 0.9f },
+        [nameof(MangaScreentoneEffect.Gamma)] = DefaultParameters with { Gamma = 2f },
+        [nameof(MangaScreentoneEffect.Border)] = DefaultParameters with { Border = 20f },
+        [nameof(MangaScreentoneEffect.Margin)] = DefaultParameters with { Margin = 80f },
+        [nameof(MangaScreentoneEffect.Paper)] = DefaultParameters with { Paper = MangaScreentonePaper.Cream },
+        [nameof(MangaScreentoneEffect.Ink)] = DefaultParameters with { Ink = 0.7f },
+    };
+
+    [Theory]
+    [MemberData(nameof(ShownChanges))]
+    public void EverySettingReachesThePipelineAsTheValueItShows(string setting, Action<MangaScreentoneEffect> change)
+    {
+        var expectedParameters = ShownParameters[setting];
+        using var devices = new GraphicsDevices();
+        using var context = devices.CreateContext();
+        RequireInterop(context);
+        using var pipeline = MangaScreentonePipeline.TryCreate();
+        Assert.NotNull(pipeline);
+        using var source = CreateSource(context);
+        var effect = new MangaScreentoneEffect();
+        change(effect);
+        using var processor = effect.CreateVideoEffect(context);
+        processor.SetInput(source.Bitmap);
+        var (canvasWidth, canvasHeight) = MangaScreentonePipeline.GetCanvasSize(Width, Height, in expectedParameters);
+        var expected = new int[canvasWidth * canvasHeight];
+        pipeline.Process(Scenes.Packed(Width, Height), expected, Width, Height, in expectedParameters);
+
+        var rendering = RenderFrame(context, processor, 0);
+
+        var margin = (canvasWidth - Width) / 2;
+        Assert.Equal((-margin, -margin, canvasWidth, canvasHeight), (rendering.Left, rendering.Top, rendering.Width, rendering.Height));
+        Assert.All(rendering.Coordinates(), point =>
+        {
+            var pixel = rendering[point.X, point.Y];
+            var packed = pixel.Blue | (pixel.Green << 8) | (pixel.Red << 16) | (pixel.Alpha << 24);
+            Assert.True(expected[(point.Y + margin) * canvasWidth + point.X + margin] == packed, $"{setting} ({point.X}, {point.Y})");
+        });
+    }
 }
