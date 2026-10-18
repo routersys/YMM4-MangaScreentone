@@ -33,61 +33,7 @@ public sealed class MangaScreentonePipelineTests
         float ink = 0.5f)
         => new(screenLines, whitePoint, blackPoint, lightTone, darkTone, gradation, whiteLines, blackLevel, whiteLevel, gamma, border, margin, paper, ink);
 
-    static int Pack(double luminance, double red, double green, double blue, double alpha)
-    {
-        static int Byte(double value) => (int)Math.Round(Math.Clamp(value, 0d, 1d) * 255d);
-        return Byte(luminance * blue * alpha) | (Byte(luminance * green * alpha) << 8) | (Byte(luminance * red * alpha) << 16) | (Byte(alpha) << 24);
-    }
-
-    static int[] Scene(int width, int height, double shift = 0d)
-    {
-        var pixels = new int[width * height];
-        var unit = Math.Min(width, height);
-        var stroke = Math.Max(unit * 0.012, 1.2);
-        for (var y = 0; y < height; y++)
-        {
-            for (var x = 0; x < width; x++)
-            {
-                var u = (x + 0.5) / width;
-                var v = (y + 0.5) / height;
-                var luminance = 0.97 - 0.12 * v;
-                var tint = (0.94, 0.97, 1.0);
-                if (u is >= 0.06 and <= 0.30 && v is >= 0.18 and <= 0.92)
-                {
-                    luminance = 0.33 + shift;
-                    tint = (1.0, 1.0, 1.0);
-                    if (Math.Abs(u - 0.14) * width < stroke || Math.Abs(v - 0.55) * height < stroke * 0.8)
-                        luminance = 0.15;
-                }
-
-                var sphereX = (u - 0.52) * width;
-                var sphereY = (v - 0.55) * height;
-                var radius = unit * 0.24;
-                var distance = Math.Sqrt(sphereX * sphereX + sphereY * sphereY);
-                if (distance < radius)
-                {
-                    var lightX = (sphereX + radius * 0.35) / radius;
-                    var lightY = (sphereY + radius * 0.35) / radius;
-                    luminance = 0.12 + 0.80 * Math.Clamp(1d - Math.Sqrt(lightX * lightX + lightY * lightY) * 0.62, 0d, 1d);
-                    tint = (1.0, 0.92, 0.85);
-                }
-                else if (Math.Abs(distance - radius) < stroke)
-                {
-                    luminance = 0.08;
-                    tint = (1.0, 1.0, 1.0);
-                }
-
-                if (u is >= 0.76 and <= 0.96 && v is >= 0.14 and <= 0.44)
-                    luminance = 0.46;
-                if (u is >= 0.76 and <= 0.96 && v is >= 0.54 and <= 0.90)
-                    luminance = 0.33;
-
-                pixels[y * width + x] = Pack(luminance, tint.Item1, tint.Item2, tint.Item3, u < 0.02 ? 0d : 1d);
-            }
-        }
-
-        return pixels;
-    }
+    static int[] Scene(int width, int height, double shift = 0d) => Scenes.Packed(width, height, shift);
 
     static int[] Render(MangaScreentonePipeline pipeline, int[] source, int width, int height, MangaScreentoneSettings.Parameters parameters)
     {
