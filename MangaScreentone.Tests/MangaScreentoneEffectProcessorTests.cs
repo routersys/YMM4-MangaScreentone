@@ -155,6 +155,7 @@ public sealed class MangaScreentoneEffectProcessorTests
     public static readonly TheoryData<string, Action<MangaScreentoneEffect>> PassThroughSettings = new()
     {
         { nameof(MangaScreentoneEffect.Amount), effect => effect.Amount.Values[0].Value = 0d },
+        { nameof(MangaScreentoneEffect.Margin), effect => { effect.Amount.Values[0].Value = 0d; effect.Margin.Values[0].Value = 80d; } },
     };
 
     [Theory]
