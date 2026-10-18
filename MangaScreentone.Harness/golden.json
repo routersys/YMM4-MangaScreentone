@@ -1,0 +1,179 @@
+{
+  "adapter": "Intel(R) Iris(R) Xe Graphics",
+  "driver": "32.0.101.7085",
+  "input": "synthetic 640x480 94A5088674D95B8D",
+  "canvas": "1280x720",
+  "cases": [
+    {
+      "name": "default",
+      "frames": [
+        0
+      ],
+      "hash": "397759CA8E3B8CBD400034E081AFD5BD2B8B39B156607BBC79B7E5930EADD3CE"
+    },
+    {
+      "name": "default-frames-0-3",
+      "frames": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "hash": "D8725C7FCCD52F45524C65556499A51587F7A098D8CCC8EB8E6872B35C85AAAA"
+    },
+    {
+      "name": "plain",
+      "frames": [
+        0
+      ],
+      "hash": "D18501793E6B9162EBC3643790F402B17F694F985D2F7DFFEBDB2D854F9ADDA5"
+    },
+    {
+      "name": "amount-0",
+      "frames": [
+        0
+      ],
+      "hash": "014512BE890D3849F6D22CDC443C169DD23F0B524E6B91B0945491226BFD0B68"
+    },
+    {
+      "name": "amount-50",
+      "frames": [
+        0
+      ],
+      "hash": "8FFB61E2B173233A140C017A653B1736F25676E1609A5562D3EB87B18367D032"
+    },
+    {
+      "name": "screen-lines-100",
+      "frames": [
+        0
+      ],
+      "hash": "100198DA967182EAB3494FF73717670808766FB999230648EB1893C32C140073"
+    },
+    {
+      "name": "screen-lines-400",
+      "frames": [
+        0
+      ],
+      "hash": "4167BDA71200AA9C3298D127AD402ECE708A2D2C2D7D3B8C7D2976AF91737878"
+    },
+    {
+      "name": "white-point-50",
+      "frames": [
+        0
+      ],
+      "hash": "030AC4F0491953B95AE5D57258836E4F3E7561A3DAC77A7B15F295D6181E5531"
+    },
+    {
+      "name": "black-point-60",
+      "frames": [
+        0
+      ],
+      "hash": "0C2B7610956F819C7904C195276ACED9D84F90E929F2CDCB20E4EDA009A6F0CC"
+    },
+    {
+      "name": "light-tone-60",
+      "frames": [
+        0
+      ],
+      "hash": "777628A9C22B3B09E465CBEE1A4572CAF12E510C4A8BB029ED8DC50906BCAC0E"
+    },
+    {
+      "name": "dark-tone-80",
+      "frames": [
+        0
+      ],
+      "hash": "7B9D98E895458DB057B35E3132642B405C3BAB8749E036C6FFC8F08CFB1C06E0"
+    },
+    {
+      "name": "gradation-0",
+      "frames": [
+        0
+      ],
+      "hash": "5E91E4BEA471DEBA25F5097E6D6F04E55F7673625C0721BC2F6914607BED53B7"
+    },
+    {
+      "name": "white-lines-off",
+      "frames": [
+        0
+      ],
+      "hash": "0ABB7F8DB76FB804E5A9BD35FD360D0736EE94C2DA8A49AAB67D5DA180E9E1C6"
+    },
+    {
+      "name": "black-level-40",
+      "frames": [
+        0
+      ],
+      "hash": "B05639C99B03E1ADBD515ABD540B662F5DB12AA0704F19AB7051FB895032D6CC"
+    },
+    {
+      "name": "white-level-100",
+      "frames": [
+        0
+      ],
+      "hash": "EA8DA807385E340C19B7828CCAC23ACA37B1FFDBDA6C2161CEA0D654762F0E6C"
+    },
+    {
+      "name": "gamma-3",
+      "frames": [
+        0
+      ],
+      "hash": "A66612555AC04028BCA85375174F5EA16FBBB90B4729D2265955F7F4953B98DC"
+    },
+    {
+      "name": "border-0",
+      "frames": [
+        0
+      ],
+      "hash": "4B51D31672681743369A1A43AF4686EE92131467A3AC7264BE6FB5F976B1D728"
+    },
+    {
+      "name": "border-30",
+      "frames": [
+        0
+      ],
+      "hash": "1BE743AB2EF1153BA041B1DAFEDD211B3166DE6FA7692C3F8C7E03D7713F56ED"
+    },
+    {
+      "name": "margin-60",
+      "frames": [
+        0
+      ],
+      "hash": "CD7AF3479B5C915984EC82BC818A267AE13C39ECDC25F64BA10119AA4DD3A87C"
+    },
+    {
+      "name": "paper-off-white",
+      "frames": [
+        0
+      ],
+      "hash": "D7168D74742A92776786A77083F955A81D992784033F64052D3EB65AFE32695F"
+    },
+    {
+      "name": "paper-cream",
+      "frames": [
+        0
+      ],
+      "hash": "E91BE42F84639CF40D52C75FDB36B5D4E8C1C380C31146D5D91A2C5B73F3EC84"
+    },
+    {
+      "name": "paper-transparent",
+      "frames": [
+        0
+      ],
+      "hash": "AB6F7276B0D4B3C745FBAE5D8D0F82CB4DAFDC0C29BFFD37C7F789DCDDDD5DE5"
+    },
+    {
+      "name": "ink-0",
+      "frames": [
+        0
+      ],
+      "hash": "35628826FD7C2F9A79A00A9B6A1348712C09E0DD80DD4E6DEE6CB9128B3B8736"
+    },
+    {
+      "name": "ink-100",
+      "frames": [
+        0
+      ],
+      "hash": "B2D5C503D456FA1752194191E6930130185190743CB74D3CC79BE04BE065EE85"
+    }
+  ]
+}
