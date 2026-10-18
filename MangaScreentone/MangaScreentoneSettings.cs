@@ -22,7 +22,6 @@ internal static class MangaScreentoneSettings
     public const float BilateralWindow = 9f;
     public const float BilateralSigmaColor = 0.10f;
     public const float BilateralSigmaSpace = 9f;
-    public const int BilateralPasses = 2;
     public const float PlanMedianSize = 11f;
     public const float PlanFillMedianSize = 21f;
     public const float PlanMinRegion = 600f;

@@ -1,4 +1,5 @@
 using ComputeWeave;
+using ComputeWeave.Descriptors;
 
 namespace MangaScreentone;
 
@@ -92,9 +93,6 @@ internal sealed partial class MangaScreentoneResources
 [ComputePipelineHost("_device", 1)]
 internal sealed partial class MangaScreentonePipelineHost
 {
-    private const int AreaOnly = 0;
-    private const int Bounds = 1;
-    private const int Moments = 2;
     private static readonly uint[] PlanOrder = [1u, 2u, 3u, 0u];
 
     private readonly GraphicsDevice _device;
@@ -214,6 +212,12 @@ internal sealed partial class MangaScreentonePipelineHost
         RecordPanelStage(in context, grid, output, width, height, in derived);
     }
 
+    private static void ForAligned<TShader>(in ComputeContext context, int width, int height, in TShader shader)
+        where TShader : struct, IComputeShader, IComputeShaderDescriptor<TShader>
+    {
+        context.For(ThreadGroupAlignment.AlignX<TShader>(width), ThreadGroupAlignment.AlignY<TShader>(height), in shader);
+    }
+
     private static void RecordSourceStage(
         in ComputeContext context,
         MangaScreentoneResources grid,
@@ -225,9 +229,10 @@ internal sealed partial class MangaScreentonePipelineHost
     {
         context.For(MangaScreentoneSettings.ScratchLength, new ScratchResetShader(scratch, MangaScreentoneSettings.ScratchLength));
         context.Barrier(scratch);
-        context.For(
-            ThreadGroupAlignment.AlignX<GrayShader>(width),
-            ThreadGroupAlignment.AlignY<GrayShader>(height),
+        ForAligned(
+            in context,
+            width,
+            height,
             new GrayShader(
                 source,
                 grid.Gray,
@@ -251,15 +256,25 @@ internal sealed partial class MangaScreentonePipelineHost
         float sigma,
         int radius)
     {
-        context.For(
-            ThreadGroupAlignment.AlignX<GaussianBlurShader>(width),
-            ThreadGroupAlignment.AlignY<GaussianBlurShader>(height),
-            new GaussianBlurShader(input, temporary, width, height, sigma, radius, 0));
+        ForAligned(in context, width, height, new GaussianBlurShader(input, temporary, width, height, sigma, radius, 0));
         context.Barrier(temporary);
-        context.For(
-            ThreadGroupAlignment.AlignX<GaussianBlurShader>(width),
-            ThreadGroupAlignment.AlignY<GaussianBlurShader>(height),
-            new GaussianBlurShader(temporary, output, width, height, sigma, radius, 1));
+        ForAligned(in context, width, height, new GaussianBlurShader(temporary, output, width, height, sigma, radius, 1));
+        context.Barrier(output);
+    }
+
+    private static void RecordBilateral(
+        in ComputeContext context,
+        ReadWriteBuffer<float> input,
+        ReadWriteBuffer<float> output,
+        int width,
+        int height,
+        in MangaScreentoneSettings.Derived derived)
+    {
+        ForAligned(
+            in context,
+            width,
+            height,
+            new BilateralShader(input, output, width, height, derived.BilateralRadius, derived.BilateralSpaceCoefficient, derived.BilateralColorCoefficient));
         context.Barrier(output);
     }
 
@@ -269,37 +284,39 @@ internal sealed partial class MangaScreentonePipelineHost
         ReadWriteBuffer<uint> classes,
         int width,
         int height,
-        int diagonal,
-        int mode)
+        bool diagonal,
+        ComponentStatistic statistic)
     {
-        context.For(width, height, new ComponentInitShader(classes, grid.Labels, width, height, diagonal));
+        context.For(width, height, new ComponentInitShader(classes, grid.Labels, width, height, diagonal ? 1 : 0));
         context.Barrier(grid.Labels);
-        context.For(width, height, new ComponentUnionShader(classes, grid.Labels, width, height, diagonal));
+        context.For(width, height, new ComponentUnionShader(classes, grid.Labels, width, height, diagonal ? 1 : 0));
         context.Barrier(grid.Labels);
         context.For(width, height, new ComponentFlattenShader(
-            classes, grid.Labels, grid.StatA, grid.StatB, grid.StatC, grid.StatD, grid.StatE, width, height, mode == Bounds ? 1 : 0));
+            classes, grid.Labels, grid.StatA, grid.StatB, grid.StatC, grid.StatD, grid.StatE, width, height, statistic == ComponentStatistic.Bounds ? 1 : 0));
         context.Barrier(grid.Labels);
         context.Barrier(grid.StatA);
         context.Barrier(grid.StatB);
         context.Barrier(grid.StatC);
         context.Barrier(grid.StatD);
         context.Barrier(grid.StatE);
-        if (mode == Bounds)
+        if (statistic == ComponentStatistic.Bounds)
         {
-            context.For(
-                ThreadGroupAlignment.AlignX<ComponentBoundsShader>(width),
-                ThreadGroupAlignment.AlignY<ComponentBoundsShader>(height),
+            ForAligned(
+                in context,
+                width,
+                height,
                 new ComponentBoundsShader(classes, grid.Labels, grid.StatA, grid.StatB, grid.StatC, grid.StatD, grid.StatE, width, height));
             context.Barrier(grid.StatB);
             context.Barrier(grid.StatC);
             context.Barrier(grid.StatD);
             context.Barrier(grid.StatE);
         }
-        else if (mode == Moments)
+        else if (statistic == ComponentStatistic.Moments)
         {
-            context.For(
-                ThreadGroupAlignment.AlignX<ComponentMomentShader>(width),
-                ThreadGroupAlignment.AlignY<ComponentMomentShader>(height),
+            ForAligned(
+                in context,
+                width,
+                height,
                 new ComponentMomentShader(classes, grid.Labels, grid.Smooth, grid.StatA, grid.StatB, grid.StatC, grid.StatD, width, height));
             context.Barrier(grid.StatB);
             context.Barrier(grid.StatC);
@@ -307,10 +324,7 @@ internal sealed partial class MangaScreentonePipelineHost
         }
         else
         {
-            context.For(
-                ThreadGroupAlignment.AlignX<ComponentAreaShader>(width),
-                ThreadGroupAlignment.AlignY<ComponentAreaShader>(height),
-                new ComponentAreaShader(classes, grid.Labels, grid.StatA, width, height));
+            ForAligned(in context, width, height, new ComponentAreaShader(classes, grid.Labels, grid.StatA, width, height));
         }
         context.Barrier(grid.StatA);
     }
@@ -322,10 +336,30 @@ internal sealed partial class MangaScreentonePipelineHost
         int height,
         in MangaScreentoneSettings.Derived derived)
     {
+        RecordSolid(in context, grid, width, height, in derived);
+        RecordInk(in context, grid, width, height, in derived);
+        RecordValueMap(in context, grid, width, height, in derived);
+    }
+
+    private static void RecordSolid(
+        in ComputeContext context,
+        MangaScreentoneResources grid,
+        int width,
+        int height,
+        in MangaScreentoneSettings.Derived derived)
+    {
         RecordBlur(in context, grid.Gray, grid.BlurA, grid.BlurB, width, height, derived.SolidSigma, derived.SolidRadius);
         context.For(width, height, new SolidShader(grid.BlurB, grid.Solid, width, height, MangaScreentoneSettings.SolidThreshold));
         context.Barrier(grid.Solid);
+    }
 
+    private static void RecordInk(
+        in ComputeContext context,
+        MangaScreentoneResources grid,
+        int width,
+        int height,
+        in MangaScreentoneSettings.Derived derived)
+    {
         RecordBlur(in context, grid.Gray, grid.BlurA, grid.BlurB, width, height, derived.LineSigma, derived.LineRadius);
         var meanRadius = derived.LineMeanSize / 2;
         context.For(width, height, new BoxBlurShader(grid.BlurB, grid.BlurA, width, height, meanRadius, 0));
@@ -336,37 +370,39 @@ internal sealed partial class MangaScreentonePipelineHost
             grid.BlurB, grid.ValueB, grid.Classes, width, height, MangaScreentoneSettings.LineContrast, MangaScreentoneSettings.LineCeiling));
         context.Barrier(grid.Classes);
 
-        RecordComponents(in context, grid, grid.Classes, width, height, 1, Bounds);
+        RecordComponents(in context, grid, grid.Classes, width, height, true, ComponentStatistic.Bounds);
         context.For(width, height, new LineKeepShader(
             grid.Classes, grid.Labels, grid.StatA, grid.StatB, grid.StatC, grid.StatD, grid.StatE, grid.Solid, width, height,
             derived.StrokeMinLength, derived.StrokeMinArea, MangaScreentoneSettings.StrokeFillRatio, derived.StrokeFillBias, derived.StrokeLargeArea));
         context.Barrier(grid.Classes);
 
-        RecordComponents(in context, grid, grid.Classes, width, height, 1, AreaOnly);
+        RecordComponents(in context, grid, grid.Classes, width, height, true, ComponentStatistic.Area);
         context.For(width, height, new InkFinalShader(grid.Classes, grid.Labels, grid.StatA, grid.Ink, width, height, derived.InkMinArea));
         context.Barrier(grid.Ink);
+    }
 
-        context.For(
-            ThreadGroupAlignment.AlignX<MaskedBlurHorizontalShader>(width),
-            ThreadGroupAlignment.AlignY<MaskedBlurHorizontalShader>(height),
+    private static void RecordValueMap(
+        in ComputeContext context,
+        MangaScreentoneResources grid,
+        int width,
+        int height,
+        in MangaScreentoneSettings.Derived derived)
+    {
+        ForAligned(
+            in context,
+            width,
+            height,
             new MaskedBlurHorizontalShader(grid.Gray, grid.Ink, grid.BlurA, grid.BlurB, width, height, derived.ValueSigma, derived.ValueRadius));
         context.Barrier(grid.BlurA);
         context.Barrier(grid.BlurB);
-        context.For(
-            ThreadGroupAlignment.AlignX<MaskedBlurVerticalShader>(width),
-            ThreadGroupAlignment.AlignY<MaskedBlurVerticalShader>(height),
+        ForAligned(
+            in context,
+            width,
+            height,
             new MaskedBlurVerticalShader(grid.BlurA, grid.BlurB, grid.ValueA, width, height, derived.ValueSigma, derived.ValueRadius, MangaScreentoneSettings.ValueMinWeight));
         context.Barrier(grid.ValueA);
-        for (var pass = 0; pass < 2; pass++)
-        {
-            var reading = pass == 0 ? grid.ValueA : grid.ValueB;
-            var writing = pass == 0 ? grid.ValueB : grid.ValueA;
-            context.For(
-                ThreadGroupAlignment.AlignX<BilateralShader>(width),
-                ThreadGroupAlignment.AlignY<BilateralShader>(height),
-                new BilateralShader(reading, writing, width, height, derived.BilateralRadius, derived.BilateralSpaceCoefficient, derived.BilateralColorCoefficient));
-            context.Barrier(writing);
-        }
+        RecordBilateral(in context, grid.ValueA, grid.ValueB, width, height, in derived);
+        RecordBilateral(in context, grid.ValueB, grid.ValueA, width, height, in derived);
     }
 
     private static void RecordCutStage(
@@ -378,7 +414,7 @@ internal sealed partial class MangaScreentonePipelineHost
     {
         context.For(width, height, new StrokeClassShader(grid.Ink, grid.Solid, grid.Classes, width, height));
         context.Barrier(grid.Classes);
-        RecordComponents(in context, grid, grid.Classes, width, height, 1, Bounds);
+        RecordComponents(in context, grid, grid.Classes, width, height, true, ComponentStatistic.Bounds);
         context.For(width, height, new CutKeepShader(
             grid.Classes, grid.Labels, grid.StatB, grid.StatC, grid.StatD, grid.StatE, grid.LevelNext, width, height, derived.CutMinLength));
         context.Barrier(grid.LevelNext);
@@ -387,6 +423,18 @@ internal sealed partial class MangaScreentonePipelineHost
     }
 
     private static void RecordTonePlanStage(
+        in ComputeContext context,
+        MangaScreentoneResources grid,
+        int width,
+        int height,
+        in MangaScreentoneSettings.Derived derived)
+    {
+        RecordToneLevels(in context, grid, width, height, in derived);
+        var level = RecordSmallRegionFill(in context, grid, width, height, in derived);
+        RecordRegionSpread(in context, grid, level, width, height, in derived);
+    }
+
+    private static void RecordToneLevels(
         in ComputeContext context,
         MangaScreentoneResources grid,
         int width,
@@ -402,7 +450,15 @@ internal sealed partial class MangaScreentonePipelineHost
         context.Barrier(grid.StatC);
         context.For(width, height, new MedianResolveShader(grid.StatB, grid.StatC, grid.Level, width, height, planRadius));
         context.Barrier(grid.Level);
+    }
 
+    private static ReadWriteBuffer<uint> RecordSmallRegionFill(
+        in ComputeContext context,
+        MangaScreentoneResources grid,
+        int width,
+        int height,
+        in MangaScreentoneSettings.Derived derived)
+    {
         var fillRadius = derived.PlanFillMedianSize / 2;
         var current = grid.Level;
         var next = grid.LevelNext;
@@ -410,7 +466,7 @@ internal sealed partial class MangaScreentonePipelineHost
         {
             context.For(width, height, new ClassFromLevelShader(current, grid.Classes, width, height, target));
             context.Barrier(grid.Classes);
-            RecordComponents(in context, grid, grid.Classes, width, height, 0, AreaOnly);
+            RecordComponents(in context, grid, grid.Classes, width, height, false, ComponentStatistic.Area);
             context.For(width, height, new HoleMarkShader(current, grid.Labels, grid.StatA, grid.Classes, width, height, target, derived.PlanMinRegion));
             context.Barrier(grid.Classes);
             context.For(width, height, new HoleCountShader(grid.Classes, grid.StatB, grid.StatC, width, height, fillRadius));
@@ -421,10 +477,21 @@ internal sealed partial class MangaScreentonePipelineHost
             (current, next) = (next, current);
         }
 
+        return current;
+    }
+
+    private static void RecordRegionSpread(
+        in ComputeContext context,
+        MangaScreentoneResources grid,
+        ReadWriteBuffer<uint> level,
+        int width,
+        int height,
+        in MangaScreentoneSettings.Derived derived)
+    {
         RecordBlur(in context, grid.ValueA, grid.BlurA, grid.Smooth, width, height, derived.SpreadSigma, derived.SpreadRadius);
-        RecordComponents(in context, grid, current, width, height, 0, Moments);
+        RecordComponents(in context, grid, level, width, height, false, ComponentStatistic.Moments);
         context.For(width, height, new SpreadResolveShader(
-            current, grid.Labels, grid.StatA, grid.StatB, grid.StatC, grid.StatD, grid.BlurA, width, height,
+            level, grid.Labels, grid.StatA, grid.StatB, grid.StatC, grid.StatD, grid.BlurA, width, height,
             MangaScreentoneSettings.SpreadFloor, MangaScreentoneSettings.SpreadRange));
         context.Barrier(grid.BlurA);
         RecordBlur(in context, grid.BlurA, grid.BlurB, grid.Accent, width, height, derived.SmoothSigma, derived.SmoothRadius);
@@ -485,5 +552,12 @@ internal sealed partial class MangaScreentonePipelineHost
             MangaScreentoneSettings.InkColor.R,
             MangaScreentoneSettings.InkColor.G,
             MangaScreentoneSettings.InkColor.B));
+    }
+
+    private enum ComponentStatistic
+    {
+        Area,
+        Bounds,
+        Moments,
     }
 }
