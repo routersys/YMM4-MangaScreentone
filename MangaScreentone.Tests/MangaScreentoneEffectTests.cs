@@ -4,6 +4,7 @@ using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Controls;
 using YukkuriMovieMaker.Exo;
 using YukkuriMovieMaker.Json;
+using YukkuriMovieMaker.Plugin;
 using YukkuriMovieMaker.Plugin.Effects;
 using YukkuriMovieMaker.Project;
 
@@ -109,6 +110,14 @@ public sealed class MangaScreentoneEffectTests
         var description = new ExoOutputDescription(new VideoInfo(), string.Empty, new AviUtlDirectories(string.Empty, string.Empty));
 
         Assert.Empty(effect.CreateExoVideoFilters(keyFrameIndex, description));
+    }
+
+    [Fact]
+    public void TheAuthorIsDeclared()
+    {
+        var details = typeof(MangaScreentoneEffect).GetCustomAttribute<PluginDetailsAttribute>()!;
+
+        Assert.Equal("routersys", details.AuthorName);
     }
 
     [Fact]

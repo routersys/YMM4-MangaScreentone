@@ -3,10 +3,12 @@ using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Controls;
 using YukkuriMovieMaker.Exo;
 using YukkuriMovieMaker.Player.Video;
+using YukkuriMovieMaker.Plugin;
 using YukkuriMovieMaker.Plugin.Effects;
 
 namespace MangaScreentone;
 
+[PluginDetails(AuthorName = "routersys")]
 [VideoEffect(nameof(Texts.MangaScreentone), [VideoEffectCategories.Filtering, VideoEffectCategories.Decoration], [nameof(Texts.TagManga), nameof(Texts.TagMonochrome), nameof(Texts.TagScreentone)], IsAviUtlSupported = false, ResourceType = typeof(Texts))]
 public sealed class MangaScreentoneEffect : VideoEffectBase
 {
