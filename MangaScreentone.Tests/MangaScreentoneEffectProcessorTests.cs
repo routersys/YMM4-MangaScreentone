@@ -497,35 +497,59 @@ public sealed class MangaScreentoneEffectProcessorTests
         [nameof(MangaScreentoneEffect.Ink)] = DefaultParameters with { Ink = 0.7f },
     };
 
-    [Theory]
-    [MemberData(nameof(ShownChanges))]
-    public void EverySettingReachesThePipelineAsTheValueItShows(string setting, Action<MangaScreentoneEffect> change)
+    static void AssertSamePageAsThePipeline(IGraphicsDevicesAndContext context, IVideoEffectProcessor processor, int[] packedSource, int width, int height, MangaScreentoneSettings.Parameters parameters, string label)
     {
-        var expectedParameters = ShownParameters[setting];
-        using var devices = new GraphicsDevices();
-        using var context = devices.CreateContext();
-        RequireInterop(context);
         using var pipeline = MangaScreentonePipeline.TryCreate();
         Assert.NotNull(pipeline);
-        using var source = CreateSource(context);
-        var effect = new MangaScreentoneEffect();
-        change(effect);
-        using var processor = effect.CreateVideoEffect(context);
-        processor.SetInput(source.Bitmap);
-        var (canvasWidth, canvasHeight) = MangaScreentonePipeline.GetCanvasSize(Width, Height, in expectedParameters);
+        var (canvasWidth, canvasHeight) = MangaScreentonePipeline.GetCanvasSize(width, height, in parameters);
         var expected = new int[canvasWidth * canvasHeight];
-        pipeline.Process(Scenes.Packed(Width, Height), expected, Width, Height, in expectedParameters);
+        pipeline.Process(packedSource, expected, width, height, in parameters);
 
         var rendering = RenderFrame(context, processor, 0);
 
-        var margin = (canvasWidth - Width) / 2;
+        var margin = (canvasWidth - width) / 2;
         Assert.Equal((-margin, -margin, canvasWidth, canvasHeight), (rendering.Left, rendering.Top, rendering.Width, rendering.Height));
         Assert.All(rendering.Coordinates(), point =>
         {
             var pixel = rendering[point.X, point.Y];
             var packed = pixel.Blue | (pixel.Green << 8) | (pixel.Red << 16) | (pixel.Alpha << 24);
-            Assert.True(expected[(point.Y + margin) * canvasWidth + point.X + margin] == packed, $"{setting} ({point.X}, {point.Y})");
+            Assert.True(expected[(point.Y + margin) * canvasWidth + point.X + margin] == packed, $"{label} ({point.X}, {point.Y})");
         });
+    }
+
+    [Theory]
+    [MemberData(nameof(ShownChanges))]
+    public void EverySettingReachesThePipelineAsTheValueItShows(string setting, Action<MangaScreentoneEffect> change)
+    {
+        using var devices = new GraphicsDevices();
+        using var context = devices.CreateContext();
+        RequireInterop(context);
+        using var source = CreateSource(context);
+        var effect = new MangaScreentoneEffect();
+        change(effect);
+        using var processor = effect.CreateVideoEffect(context);
+        processor.SetInput(source.Bitmap);
+
+        AssertSamePageAsThePipeline(context, processor, Scenes.Packed(Width, Height), Width, Height, ShownParameters[setting], setting);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void TheWhiteLinesSettingReachesThePipelineAsItIs(bool whiteLines)
+    {
+        using var devices = new GraphicsDevices();
+        using var context = devices.CreateContext();
+        RequireInterop(context);
+        using var source = new SourceImage(context, 512, 384, (x, y) => Scenes.Pixel(x, y, 512, 384));
+        var effect = Plain();
+        effect.BlackPoint.Values[0].Value = 60d;
+        effect.WhiteLines = whiteLines;
+        using var processor = effect.CreateVideoEffect(context);
+        processor.SetInput(source.Bitmap);
+        var parameters = DefaultParameters with { BlackPoint = 0.6f, WhiteLines = whiteLines, Border = 0f, Ink = 0f };
+
+        AssertSamePageAsThePipeline(context, processor, Scenes.Packed(512, 384), 512, 384, parameters, nameof(MangaScreentoneEffect.WhiteLines));
     }
 
     [Fact]
