@@ -38,6 +38,12 @@ internal static class HarnessCases
         yield return ("paper-transparent", Create(effect => effect.Paper = MangaScreentonePaper.Transparent), [0]);
         yield return ("ink-0", Create(effect => effect.Ink.Values[0].Value = 0), [0]);
         yield return ("ink-100", Create(effect => effect.Ink.Values[0].Value = 100), [0]);
+        yield return ("keep-transparent", Create(effect => effect.KeepTransparent = true), [0]);
+        yield return ("keep-transparent-margin-60", Create(effect =>
+        {
+            effect.KeepTransparent = true;
+            effect.Margin.Values[0].Value = 60;
+        }), [0]);
     }
 
     public static IEnumerable<(string Name, Func<IVideoEffect> Create, Action<IVideoEffect> Change, int Frame)> Transitions()
@@ -55,6 +61,7 @@ internal static class HarnessCases
         yield return ("paper-white-to-cream", () => Create(), effect => Of(effect).Paper = MangaScreentonePaper.Cream, 0);
         yield return ("ink-50-to-0", () => Create(), effect => Of(effect).Ink.Values[0].Value = 0, 0);
         yield return ("amount-100-to-0", () => Create(), effect => Of(effect).Amount.Values[0].Value = 0, 0);
+        yield return ("keep-transparent-off-to-on", () => Create(), effect => Of(effect).KeepTransparent = true, 0);
     }
 
     public static IEnumerable<(string Name, IVideoEffect Effect)> Benchmarks()

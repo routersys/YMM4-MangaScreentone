@@ -174,6 +174,20 @@
         0
       ],
       "hash": "B2D5C503D456FA1752194191E6930130185190743CB74D3CC79BE04BE065EE85"
+    },
+    {
+      "name": "keep-transparent",
+      "frames": [
+        0
+      ],
+      "hash": "5A02C2928ADE25F4F1A9E02A4CED8DAD6C3E61B2761DB016904FC5A04EB8A588"
+    },
+    {
+      "name": "keep-transparent-margin-60",
+      "frames": [
+        0
+      ],
+      "hash": "A5630628E788159C2F466800CC378C17EEAA41919267DC9A629608BB9318381B"
     }
   ]
 }
