@@ -45,8 +45,8 @@ internal static class MangaScreentoneSettings
     public const float MinimumToneGap = 0.02f;
     public const float MinimumLevelGap = 1e-3f;
     public const float MinimumScreenLines = 1f;
+    public const int MaximumMedianSize = 255;
     public const int MaximumCanvasSize = 8192;
-    public const int MaximumMargin = 4096;
     public const int NoiseSeedInk = 1;
     public const int NoiseSeedFibre = 2;
     public const int ScratchLength = 8;
@@ -97,7 +97,8 @@ internal static class MangaScreentoneSettings
         var bilateralSpace = BilateralSigmaSpace * k;
         var bilateralColor = (double)BilateralSigmaColor;
         var borderPixels = Math.Max((int)Math.Round(Math.Clamp(parameters.Border, 0f, 40f) * k, MidpointRounding.ToEven), 0);
-        var marginPixels = Math.Clamp((int)Math.Round(Math.Clamp(parameters.Margin, 0f, 400f) * k, MidpointRounding.ToEven), 0, MaximumMargin);
+        var marginLimit = Math.Max((MaximumCanvasSize - Math.Max(width, height)) / 2, 0);
+        var marginPixels = Math.Clamp((int)Math.Round(Math.Clamp(parameters.Margin, 0f, 400f) * k, MidpointRounding.ToEven), 0, marginLimit);
         var ink = Math.Clamp(parameters.Ink, 0f, 1f);
         var inkSigma = InkSpreadSigma * k * ink;
         return new Derived(
@@ -117,8 +118,8 @@ internal static class MangaScreentoneSettings
             bilateralWindow / 2,
             (float)(-0.5d / (bilateralSpace * bilateralSpace)),
             (float)(-0.5d / (bilateralColor * bilateralColor)),
-            OddKernel(PlanMedianSize * k),
-            OddKernel(PlanFillMedianSize * k),
+            Math.Min(OddKernel(PlanMedianSize * k), MaximumMedianSize),
+            Math.Min(OddKernel(PlanFillMedianSize * k), MaximumMedianSize),
             (float)(PlanMinRegion * squared),
             (float)(SpreadBlurSigma * k),
             GaussianRadius(SpreadBlurSigma * k),
