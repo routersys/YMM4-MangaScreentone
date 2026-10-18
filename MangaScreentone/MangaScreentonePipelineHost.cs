@@ -64,6 +64,29 @@ internal sealed partial class MangaScreentoneResources
 
     [ComputePipelineResource(ComputeResourceAccess.ReadWrite)]
     internal ReadWriteBuffer<uint> Cut { get; }
+
+    internal static Plan PerPixel(int length)
+        => new(
+            accentLength: length,
+            blurALength: length,
+            blurBLength: length,
+            classesLength: length,
+            cutLength: length,
+            grayLength: length,
+            inkLength: length,
+            labelsLength: length,
+            levelLength: length,
+            levelNextLength: length,
+            pageLength: length,
+            smoothLength: length,
+            solidLength: length,
+            statALength: length,
+            statBLength: length,
+            statCLength: length,
+            statDLength: length,
+            statELength: length,
+            valueALength: length,
+            valueBLength: length);
 }
 
 [ComputePipelineHost("_device", 1)]

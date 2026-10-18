@@ -217,29 +217,7 @@ internal sealed class MangaScreentonePipeline : IDisposable
     private bool EnsureGrid(int width, int height)
     {
         var length = checked(width * height);
-        if (!_host.TryEnsureGrid(
-                new MangaScreentoneResources.Plan(
-                    accentLength: length,
-                    blurALength: length,
-                    blurBLength: length,
-                    classesLength: length,
-                    cutLength: length,
-                    grayLength: length,
-                    inkLength: length,
-                    labelsLength: length,
-                    levelLength: length,
-                    levelNextLength: length,
-                    pageLength: length,
-                    smoothLength: length,
-                    solidLength: length,
-                    statALength: length,
-                    statBLength: length,
-                    statCLength: length,
-                    statDLength: length,
-                    statELength: length,
-                    valueALength: length,
-                    valueBLength: length),
-                out var changed))
+        if (!_host.TryEnsureGrid(MangaScreentoneResources.PerPixel(length), out var changed))
             return false;
 
         if (changed || _gridLength != length)
