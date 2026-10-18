@@ -8,6 +8,11 @@ internal static class HarnessCases
     {
         yield return ("default", Create(), [0]);
         yield return ("default-frames-0-3", Create(), [0, 1, 2, 3]);
+        yield return ("plain", Create(effect =>
+        {
+            effect.Border.Values[0].Value = 0;
+            effect.Ink.Values[0].Value = 0;
+        }), [0]);
         yield return ("amount-0", Create(effect => effect.Amount.Values[0].Value = 0), [0]);
         yield return ("amount-50", Create(effect => effect.Amount.Values[0].Value = 50), [0]);
         yield return ("screen-lines-100", Create(effect => effect.ScreenLines.Values[0].Value = 100), [0]);
