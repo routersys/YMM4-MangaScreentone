@@ -326,6 +326,7 @@ public sealed class MangaScreentoneEffectProcessorTests
         { nameof(MangaScreentoneEffect.Margin), effect => effect.Margin.Values[0].Value = 80d },
         { nameof(MangaScreentoneEffect.Paper), effect => effect.Paper = MangaScreentonePaper.Cream },
         { nameof(MangaScreentoneEffect.Ink), effect => effect.Ink.Values[0].Value = 100d },
+        { nameof(MangaScreentoneEffect.KeepTransparent), effect => effect.KeepTransparent = true },
     };
 
     [Theory]
@@ -567,5 +568,71 @@ public sealed class MangaScreentoneEffectProcessorTests
 
         Assert.Equal((0, 0, MangaScreentoneSettings.MaximumCanvasSize, 4), (rendering.Left, rendering.Top, rendering.Width, rendering.Height));
         Assert.All(rendering.Coordinates(), point => Assert.NotEqual(source[point.X, point.Y], rendering[point.X, point.Y]));
+    }
+
+    [Fact]
+    public void KeepingTransparencyLeavesTheTransparentPartsOfTheImageTransparent()
+    {
+        using var devices = new GraphicsDevices();
+        using var context = devices.CreateContext();
+        RequireInterop(context);
+        using var source = CreateSource(context);
+        var effect = Plain();
+        effect.KeepTransparent = true;
+        using var processor = effect.CreateVideoEffect(context);
+        processor.SetInput(source.Bitmap);
+
+        var rendering = RenderFrame(context, processor, 0);
+
+        Assert.Equal((0, 0, Width, Height), (rendering.Left, rendering.Top, rendering.Width, rendering.Height));
+        Assert.Contains(rendering.Coordinates(), point => source[point.X, point.Y].Alpha == 0);
+        Assert.All(rendering.Coordinates(), point =>
+        {
+            var pixel = rendering[point.X, point.Y];
+            var expected = source[point.X, point.Y].Alpha == 0 ? Bgra.Transparent : pixel;
+            Assert.True(pixel == expected && (pixel.Alpha == 0 || pixel == Bgra.Opaque(0, 0, 0) || pixel == Bgra.Opaque(255, 255, 255)), $"({point.X}, {point.Y}) {pixel}");
+        });
+        Assert.Contains(rendering.Coordinates(), point => rendering[point.X, point.Y] == Bgra.Opaque(0, 0, 0));
+        Assert.Contains(rendering.Coordinates(), point => rendering[point.X, point.Y] == Bgra.Opaque(255, 255, 255));
+    }
+
+    [Fact]
+    public void KeepingTransparencyLeavesTheMarginTransparent()
+    {
+        using var devices = new GraphicsDevices();
+        using var context = devices.CreateContext();
+        RequireInterop(context);
+        using var source = CreateSource(context);
+        var effect = Plain();
+        effect.Margin.Values[0].Value = 100d;
+        effect.KeepTransparent = true;
+        using var processor = effect.CreateVideoEffect(context);
+        processor.SetInput(source.Bitmap);
+        var margin = MangaScreentonePipeline.GetCanvasSize(Width, Height, DefaultParameters with { Margin = 100f }).Width - Width;
+
+        var rendering = RenderFrame(context, processor, 0);
+
+        Assert.True(margin > 0);
+        Assert.Equal((-margin / 2, -margin / 2, Width + margin, Height + margin), (rendering.Left, rendering.Top, rendering.Width, rendering.Height));
+        Assert.All(rendering.Coordinates().Where(point => !source.Contains(point.X, point.Y)), point => Assert.Equal(Bgra.Transparent, rendering[point.X, point.Y]));
+        Assert.Equal(Bgra.Opaque(255, 255, 255), rendering[Width - 1, Height / 2]);
+    }
+
+    [Fact]
+    public void KeepingTransparencyKeepsTheOpacityOfASemiTransparentEdge()
+    {
+        using var devices = new GraphicsDevices();
+        using var context = devices.CreateContext();
+        RequireInterop(context);
+        using var source = new SourceImage(context, Width, Height, (x, _) => new Bgra(128, 128, 128, (byte)(x * 255 / (Width - 1))));
+        var effect = Plain();
+        effect.KeepTransparent = true;
+        using var processor = effect.CreateVideoEffect(context);
+        processor.SetInput(source.Bitmap);
+
+        var rendering = RenderFrame(context, processor, 0);
+
+        Assert.All(rendering.Coordinates(), point => Assert.InRange(Math.Abs(rendering[point.X, point.Y].Alpha - source[point.X, point.Y].Alpha), 0, 1));
+        Assert.Contains(rendering.Coordinates(), point => rendering[point.X, point.Y].Alpha is > 0 and < 255);
     }
 }

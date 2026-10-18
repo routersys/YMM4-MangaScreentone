@@ -29,6 +29,7 @@ internal sealed class MangaScreentoneEffectProcessor : VideoEffectProcessorBase
     private bool _hasOutputOffset;
     private bool _hasCropRect;
     private float _amount;
+    private bool _keepTransparent;
     private Vector2 _outputOffset;
     private Vector4 _cropRect;
 
@@ -65,6 +66,11 @@ internal sealed class MangaScreentoneEffectProcessor : VideoEffectProcessorBase
         if (_isFirst || _amount != amount)
             _effect.Amount = amount;
         _amount = amount;
+
+        var keepTransparent = _item.KeepTransparent;
+        if (_isFirst || _keepTransparent != keepTransparent)
+            _effect.KeepTransparent = keepTransparent;
+        _keepTransparent = keepTransparent;
 
         if (amount <= 0f)
         {

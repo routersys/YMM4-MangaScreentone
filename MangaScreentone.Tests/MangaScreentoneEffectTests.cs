@@ -55,6 +55,25 @@ public sealed class MangaScreentoneEffectTests
     }
 
     [Fact]
+    public void TransparencyIsNotKeptByDefault()
+    {
+        Assert.False(new MangaScreentoneEffect().KeepTransparent);
+    }
+
+    [Fact]
+    public void ChangingKeepTransparentNotifiesTheEditor()
+    {
+        var effect = new MangaScreentoneEffect();
+        var changed = new List<string?>();
+        effect.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        effect.KeepTransparent = true;
+        effect.KeepTransparent = true;
+
+        Assert.Equal([nameof(MangaScreentoneEffect.KeepTransparent)], changed);
+    }
+
+    [Fact]
     public void ChangingWhiteLinesOrPaperNotifiesTheEditor()
     {
         var effect = new MangaScreentoneEffect();
@@ -150,6 +169,7 @@ public sealed class MangaScreentoneEffectTests
     [InlineData(nameof(MangaScreentoneEffect.Margin), nameof(Texts.PageGroup), nameof(Texts.Margin), nameof(Texts.MarginDescription), 31)]
     [InlineData(nameof(MangaScreentoneEffect.Paper), nameof(Texts.PageGroup), nameof(Texts.Paper), nameof(Texts.PaperDescription), 32)]
     [InlineData(nameof(MangaScreentoneEffect.Ink), nameof(Texts.PageGroup), nameof(Texts.Ink), nameof(Texts.InkDescription), 33)]
+    [InlineData(nameof(MangaScreentoneEffect.KeepTransparent), nameof(Texts.PageGroup), nameof(Texts.KeepTransparent), nameof(Texts.KeepTransparentDescription), 34)]
     public void EveryParameterIsDisplayedInItsGroupInOrder(string property, string group, string name, string description, int order)
     {
         var display = Attribute<DisplayAttribute>(property);
@@ -208,6 +228,12 @@ public sealed class MangaScreentoneEffectTests
     }
 
     [Fact]
+    public void KeepingTransparencyIsSwitchedWithAToggle()
+    {
+        Assert.NotNull(Attribute<ToggleSliderAttribute>(nameof(MangaScreentoneEffect.KeepTransparent)));
+    }
+
+    [Fact]
     public void ThePaperIsChosenFromACombo()
     {
         Assert.NotNull(Attribute<EnumComboBoxAttribute>(nameof(MangaScreentoneEffect.Paper)));
@@ -233,7 +259,7 @@ public sealed class MangaScreentoneEffectTests
     [Fact]
     public void EverySettingSurvivesAProjectRoundTrip()
     {
-        var effect = new MangaScreentoneEffect { WhiteLines = false, Paper = MangaScreentonePaper.Cream };
+        var effect = new MangaScreentoneEffect { WhiteLines = false, Paper = MangaScreentonePaper.Cream, KeepTransparent = true };
         var values = new[] { 55d, 320d, 70d, 40d, 25d, 66d, 15d, 35d, 90d, 2.5d, 12d, 80d, 35d };
         foreach (var (animation, value) in Animations(effect).Zip(values))
             animation.Values[0].Value = value;
@@ -243,6 +269,7 @@ public sealed class MangaScreentoneEffectTests
         Assert.NotSame(effect, clone);
         Assert.False(clone.WhiteLines);
         Assert.Equal(MangaScreentonePaper.Cream, clone.Paper);
+        Assert.True(clone.KeepTransparent);
         Assert.Equal(values, Animations(clone).Select(animation => animation.GetValue(0, 1, EffectDescriptions.Fps)));
     }
 }

@@ -82,6 +82,11 @@ public sealed class MangaScreentoneEffect : VideoEffectBase
     [AnimationSlider("F1", "%", 0, 100)]
     public Animation Ink { get; } = new Animation(50, 0, 100);
 
+    [Display(GroupName = nameof(Texts.PageGroup), Name = nameof(Texts.KeepTransparent), Description = nameof(Texts.KeepTransparentDescription), Order = 34, ResourceType = typeof(Texts))]
+    [ToggleSlider]
+    public bool KeepTransparent { get => _keepTransparent; set => Set(ref _keepTransparent, value); }
+    private bool _keepTransparent;
+
     private IAnimatable[]? _animatables;
 
     public override IEnumerable<string> CreateExoVideoFilters(int keyFrameIndex, ExoOutputDescription exoOutputDescription) => [];
