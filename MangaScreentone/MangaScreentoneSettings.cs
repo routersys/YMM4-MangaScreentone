@@ -22,6 +22,7 @@ internal static class MangaScreentoneSettings
     public const float BilateralWindow = 9f;
     public const float BilateralSigmaColor = 0.10f;
     public const float BilateralSigmaSpace = 9f;
+    public const int BilateralPasses = 2;
     public const float PlanMedianSize = 11f;
     public const float PlanFillMedianSize = 21f;
     public const float PlanMinRegion = 600f;
@@ -45,6 +46,14 @@ internal static class MangaScreentoneSettings
     public const float MinimumToneGap = 0.02f;
     public const float MinimumLevelGap = 1e-3f;
     public const float MinimumScreenLines = 1f;
+    public const float MinimumWhitePoint = 0.3f;
+    public const float MaximumBlackPoint = 0.7f;
+    public const float MaximumBlackLevel = 0.9f;
+    public const float MinimumWhiteLevel = 0.1f;
+    public const float MinimumGamma = 0.3f;
+    public const float MaximumGamma = 3f;
+    public const float MaximumBorder = 40f;
+    public const float MaximumMargin = 400f;
     public const int MaximumMedianSize = 255;
     public const int BlurGroupSize = 8;
     public const int MaximumGaussianRadius = 128;
@@ -78,16 +87,16 @@ internal static class MangaScreentoneSettings
 
     public static (float White, float Black) NormalizeTonePoints(float white, float black)
     {
-        var clampedWhite = Math.Clamp(white, 0.3f, 1f);
-        var clampedBlack = Math.Clamp(black, 0f, 0.7f);
+        var clampedWhite = Math.Clamp(white, MinimumWhitePoint, 1f);
+        var clampedBlack = Math.Clamp(black, 0f, MaximumBlackPoint);
         return (Math.Max(clampedWhite, clampedBlack + MinimumToneGap), clampedBlack);
     }
 
     public static (float Black, float White, float Gamma) NormalizeLevels(float black, float white, float gamma)
     {
-        var clampedBlack = Math.Clamp(black, 0f, 0.9f);
-        var clampedWhite = Math.Clamp(white, 0.1f, 1f);
-        return (clampedBlack, Math.Max(clampedWhite, clampedBlack + MinimumLevelGap), Math.Clamp(gamma, 0.3f, 3f));
+        var clampedBlack = Math.Clamp(black, 0f, MaximumBlackLevel);
+        var clampedWhite = Math.Clamp(white, MinimumWhiteLevel, 1f);
+        return (clampedBlack, Math.Max(clampedWhite, clampedBlack + MinimumLevelGap), Math.Clamp(gamma, MinimumGamma, MaximumGamma));
     }
 
     public static Derived Derive(int width, int height, in Parameters parameters)
@@ -100,50 +109,56 @@ internal static class MangaScreentoneSettings
         var bilateralWindow = OddKernel(BilateralWindow * k);
         var bilateralSpace = BilateralSigmaSpace * k;
         var bilateralColor = (double)BilateralSigmaColor;
-        var borderPixels = Math.Max((int)Math.Round(Math.Clamp(parameters.Border, 0f, 40f) * k, MidpointRounding.ToEven), 0);
+        var borderPixels = Math.Max((int)Math.Round(Math.Clamp(parameters.Border, 0f, MaximumBorder) * k, MidpointRounding.ToEven), 0);
         var marginLimit = Math.Max((MaximumCanvasSize - Math.Max(width, height)) / 2, 0);
-        var marginPixels = Math.Clamp((int)Math.Round(Math.Clamp(parameters.Margin, 0f, 400f) * k, MidpointRounding.ToEven), 0, marginLimit);
+        var marginPixels = Math.Clamp((int)Math.Round(Math.Clamp(parameters.Margin, 0f, MaximumMargin) * k, MidpointRounding.ToEven), 0, marginLimit);
         var ink = Math.Clamp(parameters.Ink, 0f, 1f);
         var inkSigma = InkSpreadSigma * k * ink;
         return new Derived(
-            (float)k,
-            (float)(SolidBlurSigma * k),
-            GaussianRadius(SolidBlurSigma * k),
-            (float)(LineBlurSigma * k),
-            GaussianRadius(LineBlurSigma * k),
-            OddKernel(LineMeanSize * k),
-            (float)(StrokeMinLength * k),
-            (float)(StrokeMinArea * squared),
-            (float)(StrokeFillBias * squared),
-            (float)(StrokeLargeArea * squared),
-            (float)(InkMinArea * squared),
-            (float)(ValueBlurSigma * k),
-            GaussianRadius(ValueBlurSigma * k),
-            bilateralWindow / 2,
-            (float)(-0.5d / (bilateralSpace * bilateralSpace)),
-            (float)(-0.5d / (bilateralColor * bilateralColor)),
-            Math.Min(OddKernel(PlanMedianSize * k), MaximumMedianSize),
-            Math.Min(OddKernel(PlanFillMedianSize * k), MaximumMedianSize),
-            (float)(PlanMinRegion * squared),
-            (float)(SpreadBlurSigma * k),
-            GaussianRadius(SpreadBlurSigma * k),
-            (float)(SpreadSmoothSigma * k),
-            GaussianRadius(SpreadSmoothSigma * k),
-            OddKernel(BetaSize * k),
-            (float)(CutMinLength * k),
-            k < CutErodeThreshold ? 2 : 3,
-            (float)(width / (double)lines),
-            white,
-            black,
-            levelBlack,
-            levelWhite,
-            gamma,
-            borderPixels,
-            marginPixels,
-            (float)inkSigma,
-            GaussianRadius(inkSigma),
-            Math.Max((int)(InkMottleCoarse * k), 1),
-            Math.Max((int)(InkMottleFine * k), 1));
+            Scale: (float)k,
+            SolidSigma: (float)(SolidBlurSigma * k),
+            SolidRadius: GaussianRadius(SolidBlurSigma * k),
+            LineSigma: (float)(LineBlurSigma * k),
+            LineRadius: GaussianRadius(LineBlurSigma * k),
+            LineMeanSize: OddKernel(LineMeanSize * k),
+            StrokeMinLength: (float)(StrokeMinLength * k),
+            StrokeMinArea: (float)(StrokeMinArea * squared),
+            StrokeFillBias: (float)(StrokeFillBias * squared),
+            StrokeLargeArea: (float)(StrokeLargeArea * squared),
+            InkMinArea: (float)(InkMinArea * squared),
+            ValueSigma: (float)(ValueBlurSigma * k),
+            ValueRadius: GaussianRadius(ValueBlurSigma * k),
+            BilateralRadius: bilateralWindow / 2,
+            BilateralSpaceCoefficient: (float)(-0.5d / (bilateralSpace * bilateralSpace)),
+            BilateralColorCoefficient: (float)(-0.5d / (bilateralColor * bilateralColor)),
+            PlanMedianSize: Math.Min(OddKernel(PlanMedianSize * k), MaximumMedianSize),
+            PlanFillMedianSize: Math.Min(OddKernel(PlanFillMedianSize * k), MaximumMedianSize),
+            PlanMinRegion: (float)(PlanMinRegion * squared),
+            SpreadSigma: (float)(SpreadBlurSigma * k),
+            SpreadRadius: GaussianRadius(SpreadBlurSigma * k),
+            SmoothSigma: (float)(SpreadSmoothSigma * k),
+            SmoothRadius: GaussianRadius(SpreadSmoothSigma * k),
+            BetaSize: OddKernel(BetaSize * k),
+            CutMinLength: (float)(CutMinLength * k),
+            CutErodeSize: k < CutErodeThreshold ? 2 : 3,
+            Pitch: (float)(width / (double)lines),
+            White: white,
+            Black: black,
+            LevelBlack: levelBlack,
+            LevelWhite: levelWhite,
+            Gamma: gamma,
+            BorderPixels: borderPixels,
+            MarginPixels: marginPixels,
+            InkSigma: (float)inkSigma,
+            InkRadius: GaussianRadius(inkSigma),
+            InkMottleCoarse: Math.Max((int)(InkMottleCoarse * k), 1),
+            InkMottleFine: Math.Max((int)(InkMottleFine * k), 1),
+            LightTone: Math.Clamp(parameters.LightTone, 0f, 1f),
+            DarkTone: Math.Clamp(parameters.DarkTone, 0f, 1f),
+            Gradation: Math.Clamp(parameters.Gradation, 0f, 1f),
+            InkStrength: ink,
+            WhiteLines: parameters.WhiteLines,
+            Paper: parameters.Paper);
     }
 
     internal readonly record struct Derived(
@@ -184,7 +199,13 @@ internal static class MangaScreentoneSettings
         float InkSigma,
         int InkRadius,
         int InkMottleCoarse,
-        int InkMottleFine);
+        int InkMottleFine,
+        float LightTone,
+        float DarkTone,
+        float Gradation,
+        float InkStrength,
+        bool WhiteLines,
+        MangaScreentonePaper Paper);
 
     internal readonly record struct Parameters(
         float ScreenLines,

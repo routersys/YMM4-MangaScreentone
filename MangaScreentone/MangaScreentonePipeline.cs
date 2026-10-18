@@ -112,10 +112,10 @@ internal sealed class MangaScreentonePipeline : IDisposable
 
         var derived = MangaScreentoneSettings.Derive(width, height, in parameters);
         _host.RecordSource(source, _scratch, width, height, in derived).Wait();
-        if (!RunStages(width, height, in derived, in parameters, true))
+        if (!RunStages(width, height, in derived, true))
             return RenderOutcome.Unchanged;
 
-        _host.RecordPanel(destination, width, height, in derived, in parameters).Wait();
+        _host.RecordPanel(destination, width, height, in derived).Wait();
         _panelKey = _pendingPanelKey;
         PanelRuns++;
         return RenderOutcome.Rendered;
@@ -134,10 +134,10 @@ internal sealed class MangaScreentonePipeline : IDisposable
 
         var derived = MangaScreentoneSettings.Derive(width, height, in parameters);
         _host.RecordSharedSource(source, _scratch, width, height, in derived).Wait();
-        if (!RunStages(width, height, in derived, in parameters, outputFresh))
+        if (!RunStages(width, height, in derived, outputFresh))
             return RenderOutcome.Unchanged;
 
-        _host.RecordSharedPanel(output, width, height, in derived, in parameters).Wait();
+        _host.RecordSharedPanel(output, width, height, in derived).Wait();
         _panelKey = _pendingPanelKey;
         PanelRuns++;
         return RenderOutcome.Rendered;
@@ -147,7 +147,6 @@ internal sealed class MangaScreentonePipeline : IDisposable
         int width,
         int height,
         in MangaScreentoneSettings.Derived derived,
-        in MangaScreentoneSettings.Parameters parameters,
         bool outputFresh)
     {
         _scratchReadBack.CopyFrom(_scratch);
@@ -177,7 +176,7 @@ internal sealed class MangaScreentonePipeline : IDisposable
             ToneRuns++;
         }
 
-        if (parameters.WhiteLines && _cutVersion != _analysisVersion)
+        if (derived.WhiteLines && _cutVersion != _analysisVersion)
         {
             _ = _host.RecordCut(width, height, in derived);
             _cutVersion = _analysisVersion;
@@ -186,15 +185,15 @@ internal sealed class MangaScreentonePipeline : IDisposable
 
         var printKey = new PrintKey(
             _toneVersion,
-            parameters.WhiteLines ? _cutVersion : -1,
+            derived.WhiteLines ? _cutVersion : -1,
             derived.Pitch,
-            Math.Clamp(parameters.LightTone, 0f, 1f),
-            Math.Clamp(parameters.DarkTone, 0f, 1f),
-            Math.Clamp(parameters.Gradation, 0f, 1f),
-            parameters.WhiteLines);
+            derived.LightTone,
+            derived.DarkTone,
+            derived.Gradation,
+            derived.WhiteLines);
         if (_printKey != printKey)
         {
-            _ = _host.RecordPrint(width, height, in derived, in parameters);
+            _ = _host.RecordPrint(width, height, in derived);
             _printKey = printKey;
             _printVersion++;
             PrintRuns++;
@@ -206,8 +205,8 @@ internal sealed class MangaScreentonePipeline : IDisposable
             height,
             derived.MarginPixels,
             derived.BorderPixels,
-            parameters.Paper,
-            Math.Clamp(parameters.Ink, 0f, 1f));
+            derived.Paper,
+            derived.InkStrength);
         return outputFresh || _panelKey != _pendingPanelKey;
     }
 

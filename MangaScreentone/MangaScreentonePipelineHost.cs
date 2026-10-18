@@ -155,12 +155,11 @@ internal sealed partial class MangaScreentonePipelineHost
         [ComputeOwnedResource(nameof(_grid))] MangaScreentoneResources grid,
         int width,
         int height,
-        in MangaScreentoneSettings.Derived derived,
-        in MangaScreentoneSettings.Parameters parameters)
+        in MangaScreentoneSettings.Derived derived)
     {
         _ = _device;
 
-        RecordPrintStage(in context, grid, width, height, in derived, in parameters);
+        RecordPrintStage(in context, grid, width, height, in derived);
     }
 
     [ComputePipeline]
@@ -170,12 +169,11 @@ internal sealed partial class MangaScreentonePipelineHost
         [ComputeResource(ComputeResourceAccess.ReadWrite)] ReadWriteTexture2D<Bgra32, Float4> output,
         int width,
         int height,
-        in MangaScreentoneSettings.Derived derived,
-        in MangaScreentoneSettings.Parameters parameters)
+        in MangaScreentoneSettings.Derived derived)
     {
         _ = _device;
 
-        RecordPanelStage(in context, grid, output, width, height, in derived, in parameters);
+        RecordPanelStage(in context, grid, output, width, height, in derived);
     }
 
     [ComputePipeline]
@@ -186,12 +184,11 @@ internal sealed partial class MangaScreentonePipelineHost
         [ComputeResource(ComputeResourceAccess.ReadWrite, Sharing = ComputeResourceSharing.External)] ReadWriteTexture2D<Bgra32, Float4> output,
         int width,
         int height,
-        in MangaScreentoneSettings.Derived derived,
-        in MangaScreentoneSettings.Parameters parameters)
+        in MangaScreentoneSettings.Derived derived)
     {
         _ = _device;
 
-        RecordPanelStage(in context, grid, output, width, height, in derived, in parameters);
+        RecordPanelStage(in context, grid, output, width, height, in derived);
     }
 
     private static void RecordSourceStage(
@@ -415,21 +412,20 @@ internal sealed partial class MangaScreentonePipelineHost
         MangaScreentoneResources grid,
         int width,
         int height,
-        in MangaScreentoneSettings.Derived derived,
-        in MangaScreentoneSettings.Parameters parameters)
+        in MangaScreentoneSettings.Derived derived)
     {
         context.For(width, height, new CoverShader(
             grid.Level, grid.Smooth, grid.Accent, grid.BlurA, width, height, derived.White, derived.Black,
-            Math.Clamp(parameters.LightTone, 0f, 1f), Math.Clamp(parameters.DarkTone, 0f, 1f), Math.Clamp(parameters.Gradation, 0f, 1f)));
+            derived.LightTone, derived.DarkTone, derived.Gradation));
         context.Barrier(grid.BlurA);
         context.For(width, height, new PrintShader(grid.BlurA, grid.Page, width, height, derived.Pitch));
         context.Barrier(grid.Page);
-        if (parameters.WhiteLines)
+        if (derived.WhiteLines)
         {
             context.For(width, height, new ErodeShader(grid.Level, grid.LevelNext, width, height, derived.BetaSize, 3u));
             context.Barrier(grid.LevelNext);
         }
-        context.For(width, height, new PageShader(grid.Page, grid.Ink, grid.LevelNext, grid.Cut, width, height, parameters.WhiteLines ? 1 : 0));
+        context.For(width, height, new PageShader(grid.Page, grid.Ink, grid.LevelNext, grid.Cut, width, height, derived.WhiteLines ? 1 : 0));
         context.Barrier(grid.Page);
     }
 
@@ -439,11 +435,9 @@ internal sealed partial class MangaScreentonePipelineHost
         ReadWriteTexture2D<Bgra32, Float4> output,
         int width,
         int height,
-        in MangaScreentoneSettings.Derived derived,
-        in MangaScreentoneSettings.Parameters parameters)
+        in MangaScreentoneSettings.Derived derived)
     {
-        var paper = MangaScreentoneSettings.GetPaper(parameters.Paper);
-        var ink = Math.Clamp(parameters.Ink, 0f, 1f);
+        var paper = MangaScreentoneSettings.GetPaper(derived.Paper);
         var canvasWidth = width + derived.MarginPixels * 2;
         var canvasHeight = height + derived.MarginPixels * 2;
         context.For(canvasWidth, canvasHeight, new PanelShader(
@@ -457,14 +451,14 @@ internal sealed partial class MangaScreentonePipelineHost
             derived.BorderPixels,
             derived.InkRadius,
             derived.InkSigma,
-            ink,
+            derived.InkStrength,
             derived.InkMottleCoarse,
             derived.InkMottleFine,
             paper.R,
             paper.G,
             paper.B,
             paper.Fibre,
-            parameters.Paper == MangaScreentonePaper.Transparent ? 1 : 0,
+            derived.Paper == MangaScreentonePaper.Transparent ? 1 : 0,
             MangaScreentoneSettings.InkColor.R,
             MangaScreentoneSettings.InkColor.G,
             MangaScreentoneSettings.InkColor.B));
