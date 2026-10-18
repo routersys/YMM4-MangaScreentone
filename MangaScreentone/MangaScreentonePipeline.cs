@@ -21,7 +21,6 @@ internal sealed class MangaScreentonePipeline : IDisposable
     private ToneKey? _toneKey;
     private PrintKey? _printKey;
     private PanelKey? _panelKey;
-    private PanelKey _pendingPanelKey;
     private int _analysisVersion;
     private int _cutVersion = -1;
     private int _toneVersion;
@@ -112,12 +111,11 @@ internal sealed class MangaScreentonePipeline : IDisposable
 
         var derived = MangaScreentoneSettings.Derive(width, height, in parameters);
         _host.RecordSource(source, _scratch, width, height, in derived).Wait();
-        if (!RunStages(width, height, in derived, true))
+        if (!RunStages(width, height, in derived, true, out var panelKey))
             return RenderOutcome.Unchanged;
 
         _host.RecordPanel(destination, width, height, in derived).Wait();
-        _panelKey = _pendingPanelKey;
-        PanelRuns++;
+        CompletePanel(panelKey);
         return RenderOutcome.Rendered;
     }
 
@@ -134,12 +132,11 @@ internal sealed class MangaScreentonePipeline : IDisposable
 
         var derived = MangaScreentoneSettings.Derive(width, height, in parameters);
         _host.RecordSharedSource(source, _scratch, width, height, in derived).Wait();
-        if (!RunStages(width, height, in derived, outputFresh))
+        if (!RunStages(width, height, in derived, outputFresh, out var panelKey))
             return RenderOutcome.Unchanged;
 
         _host.RecordSharedPanel(output, width, height, in derived).Wait();
-        _panelKey = _pendingPanelKey;
-        PanelRuns++;
+        CompletePanel(panelKey);
         return RenderOutcome.Rendered;
     }
 
@@ -147,7 +144,8 @@ internal sealed class MangaScreentonePipeline : IDisposable
         int width,
         int height,
         in MangaScreentoneSettings.Derived derived,
-        bool outputFresh)
+        bool outputFresh,
+        out PanelKey panelKey)
     {
         _scratchReadBack.CopyFrom(_scratch);
         var hashed = _scratchReadBack.Span;
@@ -199,7 +197,7 @@ internal sealed class MangaScreentonePipeline : IDisposable
             PrintRuns++;
         }
 
-        _pendingPanelKey = new PanelKey(
+        panelKey = new PanelKey(
             _printVersion,
             width,
             height,
@@ -207,7 +205,13 @@ internal sealed class MangaScreentonePipeline : IDisposable
             derived.BorderPixels,
             derived.Paper,
             derived.InkStrength);
-        return outputFresh || _panelKey != _pendingPanelKey;
+        return outputFresh || _panelKey != panelKey;
+    }
+
+    private void CompletePanel(PanelKey panelKey)
+    {
+        _panelKey = panelKey;
+        PanelRuns++;
     }
 
     private bool EnsureGrid(int width, int height)
