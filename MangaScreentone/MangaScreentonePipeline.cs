@@ -27,6 +27,16 @@ internal sealed class MangaScreentonePipeline : IDisposable
     private int _toneVersion;
     private int _printVersion;
 
+    internal int AnalysisRuns { get; private set; }
+
+    internal int CutRuns { get; private set; }
+
+    internal int ToneRuns { get; private set; }
+
+    internal int PrintRuns { get; private set; }
+
+    internal int PanelRuns { get; private set; }
+
     private MangaScreentonePipeline(GraphicsDevice device, MangaScreentonePipelineHost host)
     {
         _device = device;
@@ -107,6 +117,7 @@ internal sealed class MangaScreentonePipeline : IDisposable
 
         _host.RecordPanel(destination, width, height, in derived, in parameters).Wait();
         _panelKey = _pendingPanelKey;
+        PanelRuns++;
         return RenderOutcome.Rendered;
     }
 
@@ -128,6 +139,7 @@ internal sealed class MangaScreentonePipeline : IDisposable
 
         _host.RecordSharedPanel(output, width, height, in derived, in parameters).Wait();
         _panelKey = _pendingPanelKey;
+        PanelRuns++;
         return RenderOutcome.Rendered;
     }
 
@@ -153,6 +165,7 @@ internal sealed class MangaScreentonePipeline : IDisposable
             _ = _host.RecordAnalysis(width, height, in derived);
             _analysisKey = analysisKey;
             _analysisVersion++;
+            AnalysisRuns++;
         }
 
         var toneKey = new ToneKey(_analysisVersion, derived.White, derived.Black);
@@ -161,12 +174,14 @@ internal sealed class MangaScreentonePipeline : IDisposable
             _ = _host.RecordTonePlan(width, height, in derived);
             _toneKey = toneKey;
             _toneVersion++;
+            ToneRuns++;
         }
 
         if (parameters.WhiteLines && _cutVersion != _analysisVersion)
         {
             _ = _host.RecordCut(width, height, in derived);
             _cutVersion = _analysisVersion;
+            CutRuns++;
         }
 
         var printKey = new PrintKey(
@@ -182,6 +197,7 @@ internal sealed class MangaScreentonePipeline : IDisposable
             _ = _host.RecordPrint(width, height, in derived, in parameters);
             _printKey = printKey;
             _printVersion++;
+            PrintRuns++;
         }
 
         _pendingPanelKey = new PanelKey(
