@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="MangaScreentone/MangaScreentone.csproj">
+    <BuildDependency Project="MangaScreentone.Shader/MangaScreentone.Shader.vcxproj" />
+  </Project>
+  <Project Path="MangaScreentone.Shader/MangaScreentone.Shader.vcxproj">
+    <BuildType Solution="*|*" Project="Release" />
+    <Platform Solution="*|*" Project="Win32" />
+  </Project>
+</Solution>
