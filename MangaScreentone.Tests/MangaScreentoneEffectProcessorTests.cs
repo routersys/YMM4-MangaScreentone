@@ -527,4 +527,20 @@ public sealed class MangaScreentoneEffectProcessorTests
             Assert.True(expected[(point.Y + margin) * canvasWidth + point.X + margin] == packed, $"{setting} ({point.X}, {point.Y})");
         });
     }
+
+    [Fact]
+    public void AnImageExactlyAtTheLimitIsStillTurnedIntoManga()
+    {
+        using var devices = new GraphicsDevices();
+        using var context = devices.CreateContext();
+        RequireInterop(context);
+        using var source = SourceImage.Solid(context, MangaScreentoneSettings.MaximumCanvasSize, 4, Bgra.Opaque(40, 90, 200));
+        using var processor = Plain().CreateVideoEffect(context);
+        processor.SetInput(source.Bitmap);
+
+        var rendering = RenderFrame(context, processor, 0);
+
+        Assert.Equal((0, 0, MangaScreentoneSettings.MaximumCanvasSize, 4), (rendering.Left, rendering.Top, rendering.Width, rendering.Height));
+        Assert.All(rendering.Coordinates(), point => Assert.NotEqual(source[point.X, point.Y], rendering[point.X, point.Y]));
+    }
 }
