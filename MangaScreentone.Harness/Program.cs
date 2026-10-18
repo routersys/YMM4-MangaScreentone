@@ -46,6 +46,12 @@ try
         return 0;
     }
 
+    if (arguments.Mode == HarnessMode.Structure)
+    {
+        StructureMeasurement.Run(arguments.Input is { } structureInput ? HarnessImage.Load(structureInput) : HarnessImage.Synthetic(FullHdWidth, FullHdHeight));
+        return 0;
+    }
+
     var image = arguments.Input is { } input ? HarnessImage.Load(input) : HarnessImage.Synthetic(ImageWidth, ImageHeight);
     using var renderer = arguments.Input is null
         ? new HarnessRenderer(CanvasWidth, CanvasHeight, image)
