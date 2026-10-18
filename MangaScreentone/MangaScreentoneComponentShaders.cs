@@ -207,17 +207,40 @@ internal readonly partial struct ComponentAreaShader(
     private readonly int width = width;
     private readonly int height = height;
 
+    [GroupShared(2)]
+    private static readonly int[] group = null!;
+
     public void Execute()
     {
+        if (GroupIds.Index == 0)
+        {
+            group[0] = -1;
+            group[1] = 0;
+        }
+        Hlsl.GroupMemoryBarrierWithGroupSync();
+
         var x = ThreadIds.X;
         var y = ThreadIds.Y;
-        if (x >= width || y >= height)
-            return;
-
         var index = y * width + x;
-        if (classes[index] == MangaScreentoneSettings.InactiveClass)
-            return;
-        Hlsl.InterlockedAdd(ref area[(int)labels[index]], 1u);
+        var active = x < width && y < height && classes[index] != MangaScreentoneSettings.InactiveClass;
+        var root = active ? (int)labels[index] : -1;
+        int previous;
+        if (active)
+            Hlsl.InterlockedCompareExchange(ref group[0], -1, root, out previous);
+        Hlsl.GroupMemoryBarrierWithGroupSync();
+
+        var anchor = group[0];
+        if (active)
+        {
+            if (root == anchor)
+                Hlsl.InterlockedAdd(ref group[1], 1);
+            else
+                Hlsl.InterlockedAdd(ref area[root], 1u);
+        }
+        Hlsl.GroupMemoryBarrierWithGroupSync();
+
+        if (GroupIds.Index == 0 && anchor >= 0)
+            Hlsl.InterlockedAdd(ref area[anchor], (uint)group[1]);
     }
 }
 
@@ -244,23 +267,61 @@ internal readonly partial struct ComponentBoundsShader(
     private readonly int width = width;
     private readonly int height = height;
 
+    [GroupShared(6)]
+    private static readonly int[] group = null!;
+
     public void Execute()
     {
+        if (GroupIds.Index == 0)
+        {
+            group[0] = -1;
+            group[1] = 0;
+            group[2] = int.MaxValue;
+            group[3] = int.MaxValue;
+            group[4] = -1;
+            group[5] = -1;
+        }
+        Hlsl.GroupMemoryBarrierWithGroupSync();
+
         var x = ThreadIds.X;
         var y = ThreadIds.Y;
-        if (x >= width || y >= height)
-            return;
-
         var index = y * width + x;
-        if (classes[index] == MangaScreentoneSettings.InactiveClass)
-            return;
+        var active = x < width && y < height && classes[index] != MangaScreentoneSettings.InactiveClass;
+        var root = active ? (int)labels[index] : -1;
+        int previous;
+        if (active)
+            Hlsl.InterlockedCompareExchange(ref group[0], -1, root, out previous);
+        Hlsl.GroupMemoryBarrierWithGroupSync();
 
-        var root = (int)labels[index];
-        Hlsl.InterlockedAdd(ref area[root], 1u);
-        Hlsl.InterlockedMin(ref minX[root], (uint)x);
-        Hlsl.InterlockedMin(ref minY[root], (uint)y);
-        Hlsl.InterlockedMax(ref maxX[root], (uint)x);
-        Hlsl.InterlockedMax(ref maxY[root], (uint)y);
+        var anchor = group[0];
+        if (active)
+        {
+            if (root == anchor)
+            {
+                Hlsl.InterlockedAdd(ref group[1], 1);
+                Hlsl.InterlockedMin(ref group[2], x);
+                Hlsl.InterlockedMin(ref group[3], y);
+                Hlsl.InterlockedMax(ref group[4], x);
+                Hlsl.InterlockedMax(ref group[5], y);
+            }
+            else
+            {
+                Hlsl.InterlockedAdd(ref area[root], 1u);
+                Hlsl.InterlockedMin(ref minX[root], (uint)x);
+                Hlsl.InterlockedMin(ref minY[root], (uint)y);
+                Hlsl.InterlockedMax(ref maxX[root], (uint)x);
+                Hlsl.InterlockedMax(ref maxY[root], (uint)y);
+            }
+        }
+        Hlsl.GroupMemoryBarrierWithGroupSync();
+
+        if (GroupIds.Index != 0 || anchor < 0)
+            return;
+        Hlsl.InterlockedAdd(ref area[anchor], (uint)group[1]);
+        Hlsl.InterlockedMin(ref minX[anchor], (uint)group[2]);
+        Hlsl.InterlockedMin(ref minY[anchor], (uint)group[3]);
+        Hlsl.InterlockedMax(ref maxX[anchor], (uint)group[4]);
+        Hlsl.InterlockedMax(ref maxY[anchor], (uint)group[5]);
     }
 }
 
@@ -287,23 +348,58 @@ internal readonly partial struct ComponentMomentShader(
     private readonly int width = width;
     private readonly int height = height;
 
+    [GroupShared(5)]
+    private static readonly int[] group = null!;
+
     public void Execute()
     {
+        if (GroupIds.Index == 0)
+        {
+            group[0] = -1;
+            group[1] = 0;
+            group[2] = 0;
+            group[3] = 0;
+            group[4] = 0;
+        }
+        Hlsl.GroupMemoryBarrierWithGroupSync();
+
         var x = ThreadIds.X;
         var y = ThreadIds.Y;
-        if (x >= width || y >= height)
-            return;
-
         var index = y * width + x;
-        if (classes[index] == MangaScreentoneSettings.InactiveClass)
-            return;
+        var active = x < width && y < height && classes[index] != MangaScreentoneSettings.InactiveClass;
+        var root = active ? (int)labels[index] : -1;
+        int previous;
+        if (active)
+            Hlsl.InterlockedCompareExchange(ref group[0], -1, root, out previous);
+        Hlsl.GroupMemoryBarrierWithGroupSync();
 
-        var root = (int)labels[index];
-        var quantized = (uint)(Hlsl.Saturate(values[index]) * 255f + 0.5f);
-        var square = quantized * quantized;
-        Hlsl.InterlockedAdd(ref area[root], 1u);
-        Hlsl.InterlockedAdd(ref sum[root], quantized);
-        Hlsl.InterlockedAdd(ref squareLow[root], square & 255u);
-        Hlsl.InterlockedAdd(ref squareHigh[root], square >> 8);
+        var anchor = group[0];
+        if (active)
+        {
+            var quantized = (uint)(Hlsl.Saturate(values[index]) * 255f + 0.5f);
+            var square = quantized * quantized;
+            if (root == anchor)
+            {
+                Hlsl.InterlockedAdd(ref group[1], 1);
+                Hlsl.InterlockedAdd(ref group[2], (int)quantized);
+                Hlsl.InterlockedAdd(ref group[3], (int)(square & 255u));
+                Hlsl.InterlockedAdd(ref group[4], (int)(square >> 8));
+            }
+            else
+            {
+                Hlsl.InterlockedAdd(ref area[root], 1u);
+                Hlsl.InterlockedAdd(ref sum[root], quantized);
+                Hlsl.InterlockedAdd(ref squareLow[root], square & 255u);
+                Hlsl.InterlockedAdd(ref squareHigh[root], square >> 8);
+            }
+        }
+        Hlsl.GroupMemoryBarrierWithGroupSync();
+
+        if (GroupIds.Index != 0 || anchor < 0)
+            return;
+        Hlsl.InterlockedAdd(ref area[anchor], (uint)group[1]);
+        Hlsl.InterlockedAdd(ref sum[anchor], (uint)group[2]);
+        Hlsl.InterlockedAdd(ref squareLow[anchor], (uint)group[3]);
+        Hlsl.InterlockedAdd(ref squareHigh[anchor], (uint)group[4]);
     }
 }

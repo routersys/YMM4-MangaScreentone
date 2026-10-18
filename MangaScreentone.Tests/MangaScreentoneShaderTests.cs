@@ -106,7 +106,7 @@ public sealed class MangaScreentoneShaderTests
         device.For(width, height, new ComponentInitShader(classBuffer, labels, width, height, connectivity));
         device.For(width, height, new ComponentUnionShader(classBuffer, labels, width, height, connectivity));
         device.For(width, height, new ComponentFlattenShader(classBuffer, labels, area, minX, minY, maxX, maxY, width, height, 1));
-        device.For(width, height, new ComponentBoundsShader(classBuffer, labels, area, minX, minY, maxX, maxY, width, height));
+        device.For(ThreadGroupAlignment.AlignX<ComponentBoundsShader>(width), ThreadGroupAlignment.AlignY<ComponentBoundsShader>(height), new ComponentBoundsShader(classBuffer, labels, area, minX, minY, maxX, maxY, width, height));
         return new Labelled(Download(labels), Download(area), Download(minX), Download(minY), Download(maxX), Download(maxY));
     }
 
@@ -375,7 +375,7 @@ public sealed class MangaScreentoneShaderTests
         device.For(width, height, new ComponentInitShader(classBuffer, labels, width, height, 0));
         device.For(width, height, new ComponentUnionShader(classBuffer, labels, width, height, 0));
         device.For(width, height, new ComponentFlattenShader(classBuffer, labels, area, unusedC, unusedD, unusedE, high, width, height, 0));
-        device.For(width, height, new ComponentAreaShader(classBuffer, labels, area, width, height));
+        device.For(ThreadGroupAlignment.AlignX<ComponentAreaShader>(width), ThreadGroupAlignment.AlignY<ComponentAreaShader>(height), new ComponentAreaShader(classBuffer, labels, area, width, height));
 
         device.For(width, height, new HoleCountShader(levelBuffer, labels, area, low, high, width, height, size / 2, target, minimumRegion));
         device.For(width, height, new HoleResolveShader(levelBuffer, labels, area, low, high, output, width, height, size / 2, target, minimumRegion));
@@ -423,7 +423,7 @@ public sealed class MangaScreentoneShaderTests
         device.For(width, height, new ComponentInitShader(levelBuffer, labels, width, height, 0));
         device.For(width, height, new ComponentUnionShader(levelBuffer, labels, width, height, 0));
         device.For(width, height, new ComponentFlattenShader(levelBuffer, labels, area, sum, low, high, unused, width, height, 0));
-        device.For(width, height, new ComponentMomentShader(levelBuffer, labels, values, area, sum, low, high, width, height));
+        device.For(ThreadGroupAlignment.AlignX<ComponentMomentShader>(width), ThreadGroupAlignment.AlignY<ComponentMomentShader>(height), new ComponentMomentShader(levelBuffer, labels, values, area, sum, low, high, width, height));
 
         device.For(width, height, new SpreadResolveShader(levelBuffer, labels, area, sum, low, high, output, width, height, 0.03f, 0.05f));
 

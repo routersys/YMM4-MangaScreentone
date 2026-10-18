@@ -260,8 +260,10 @@ internal sealed partial class MangaScreentonePipelineHost
         context.Barrier(grid.StatE);
         if (mode == Bounds)
         {
-            context.For(width, height, new ComponentBoundsShader(
-                classes, grid.Labels, grid.StatA, grid.StatB, grid.StatC, grid.StatD, grid.StatE, width, height));
+            context.For(
+                ThreadGroupAlignment.AlignX<ComponentBoundsShader>(width),
+                ThreadGroupAlignment.AlignY<ComponentBoundsShader>(height),
+                new ComponentBoundsShader(classes, grid.Labels, grid.StatA, grid.StatB, grid.StatC, grid.StatD, grid.StatE, width, height));
             context.Barrier(grid.StatB);
             context.Barrier(grid.StatC);
             context.Barrier(grid.StatD);
@@ -269,15 +271,20 @@ internal sealed partial class MangaScreentonePipelineHost
         }
         else if (mode == Moments)
         {
-            context.For(width, height, new ComponentMomentShader(
-                classes, grid.Labels, grid.Smooth, grid.StatA, grid.StatB, grid.StatC, grid.StatD, width, height));
+            context.For(
+                ThreadGroupAlignment.AlignX<ComponentMomentShader>(width),
+                ThreadGroupAlignment.AlignY<ComponentMomentShader>(height),
+                new ComponentMomentShader(classes, grid.Labels, grid.Smooth, grid.StatA, grid.StatB, grid.StatC, grid.StatD, width, height));
             context.Barrier(grid.StatB);
             context.Barrier(grid.StatC);
             context.Barrier(grid.StatD);
         }
         else
         {
-            context.For(width, height, new ComponentAreaShader(classes, grid.Labels, grid.StatA, width, height));
+            context.For(
+                ThreadGroupAlignment.AlignX<ComponentAreaShader>(width),
+                ThreadGroupAlignment.AlignY<ComponentAreaShader>(height),
+                new ComponentAreaShader(classes, grid.Labels, grid.StatA, width, height));
         }
         context.Barrier(grid.StatA);
     }
