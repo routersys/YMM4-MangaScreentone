@@ -1,0 +1,19 @@
+{
+  "stryker-config": {
+    "project": "MangaScreentone.csproj",
+    "test-runner": "mtp",
+    "coverage-analysis": "off",
+    "mutate": [
+      "**/*.cs",
+      "!**/YMM4-GitHubUpdateNotifier/**",
+      "!**/YMM4-Telemetry/**",
+      "!**/MangaScreentoneTelemetry.cs",
+      "!**/MangaScreentoneUpdateNotifier.cs"
+    ],
+    "reporters": [
+      "progress",
+      "cleartext",
+      "html"
+    ]
+  }
+}
