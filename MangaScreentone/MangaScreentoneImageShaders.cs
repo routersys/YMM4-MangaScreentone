@@ -113,15 +113,30 @@ internal readonly partial struct GaussianBlurShader(
         if (x >= width || y >= height)
             return;
 
+        var along = vertical == 0 ? x : y;
+        var length = vertical == 0 ? width : height;
+        var stride = vertical == 0 ? 1 : width;
         var sum = 0f;
         var weighted = 0f;
-        for (var offset = -radius; offset <= radius; offset++)
+        if (along >= radius && along < length - radius)
         {
-            var weight = weights[offset + radius];
-            var sampleX = vertical == 0 ? MangaScreentoneShaderMath.Reflect(x + offset, width) : x;
-            var sampleY = vertical == 0 ? y : MangaScreentoneShaderMath.Reflect(y + offset, height);
-            weighted += weight * input[sampleY * width + sampleX];
-            sum += weight;
+            var origin = y * width + x;
+            for (var offset = -radius; offset <= radius; offset++)
+            {
+                var weight = weights[offset + radius];
+                weighted += weight * input[origin + offset * stride];
+                sum += weight;
+            }
+        }
+        else
+        {
+            for (var offset = -radius; offset <= radius; offset++)
+            {
+                var weight = weights[offset + radius];
+                var reflected = MangaScreentoneShaderMath.Reflect(along + offset, length);
+                weighted += weight * input[vertical == 0 ? y * width + reflected : reflected * width + x];
+                sum += weight;
+            }
         }
         output[y * width + x] = weighted / sum;
     }
@@ -151,12 +166,23 @@ internal readonly partial struct BoxBlurShader(
         if (x >= width || y >= height)
             return;
 
+        var along = vertical == 0 ? x : y;
+        var length = vertical == 0 ? width : height;
+        var stride = vertical == 0 ? 1 : width;
         var sum = 0f;
-        for (var offset = -radius; offset <= radius; offset++)
+        if (along >= radius && along < length - radius)
         {
-            var sampleX = vertical == 0 ? MangaScreentoneShaderMath.Reflect(x + offset, width) : x;
-            var sampleY = vertical == 0 ? y : MangaScreentoneShaderMath.Reflect(y + offset, height);
-            sum += input[sampleY * width + sampleX];
+            var origin = y * width + x;
+            for (var offset = -radius; offset <= radius; offset++)
+                sum += input[origin + offset * stride];
+        }
+        else
+        {
+            for (var offset = -radius; offset <= radius; offset++)
+            {
+                var reflected = MangaScreentoneShaderMath.Reflect(along + offset, length);
+                sum += input[vertical == 0 ? y * width + reflected : reflected * width + x];
+            }
         }
         output[y * width + x] = sum / (2 * radius + 1);
     }
@@ -204,14 +230,30 @@ internal readonly partial struct MaskedBlurHorizontalShader(
         var sum = 0f;
         var weightedGray = 0f;
         var weightedMask = 0f;
-        for (var offset = -radius; offset <= radius; offset++)
+        if (x >= radius && x < width - radius)
         {
-            var weight = weights[offset + radius];
-            var index = y * width + MangaScreentoneShaderMath.Reflect(x + offset, width);
-            var open = ink[index] == 0u ? 1f : 0f;
-            weightedGray += weight * gray[index] * open;
-            weightedMask += weight * open;
-            sum += weight;
+            var origin = y * width + x;
+            for (var offset = -radius; offset <= radius; offset++)
+            {
+                var weight = weights[offset + radius];
+                var index = origin + offset;
+                var open = ink[index] == 0u ? 1f : 0f;
+                weightedGray += weight * gray[index] * open;
+                weightedMask += weight * open;
+                sum += weight;
+            }
+        }
+        else
+        {
+            for (var offset = -radius; offset <= radius; offset++)
+            {
+                var weight = weights[offset + radius];
+                var index = y * width + MangaScreentoneShaderMath.Reflect(x + offset, width);
+                var open = ink[index] == 0u ? 1f : 0f;
+                weightedGray += weight * gray[index] * open;
+                weightedMask += weight * open;
+                sum += weight;
+            }
         }
         numerator[y * width + x] = weightedGray / sum;
         denominator[y * width + x] = weightedMask / sum;
@@ -260,13 +302,28 @@ internal readonly partial struct MaskedBlurVerticalShader(
         var sum = 0f;
         var weightedNumerator = 0f;
         var weightedDenominator = 0f;
-        for (var offset = -radius; offset <= radius; offset++)
+        if (y >= radius && y < height - radius)
         {
-            var weight = weights[offset + radius];
-            var index = MangaScreentoneShaderMath.Reflect(y + offset, height) * width + x;
-            weightedNumerator += weight * numerator[index];
-            weightedDenominator += weight * denominator[index];
-            sum += weight;
+            var origin = y * width + x;
+            for (var offset = -radius; offset <= radius; offset++)
+            {
+                var weight = weights[offset + radius];
+                var index = origin + offset * width;
+                weightedNumerator += weight * numerator[index];
+                weightedDenominator += weight * denominator[index];
+                sum += weight;
+            }
+        }
+        else
+        {
+            for (var offset = -radius; offset <= radius; offset++)
+            {
+                var weight = weights[offset + radius];
+                var index = MangaScreentoneShaderMath.Reflect(y + offset, height) * width + x;
+                weightedNumerator += weight * numerator[index];
+                weightedDenominator += weight * denominator[index];
+                sum += weight;
+            }
         }
         output[y * width + x] = (weightedNumerator / sum) / Hlsl.Max(weightedDenominator / sum, minimumWeight);
     }
@@ -315,18 +372,38 @@ internal readonly partial struct BilateralShader(
         var center = input[y * width + x];
         var sum = 0f;
         var weighted = 0f;
-        for (var dy = -radius; dy <= radius; dy++)
+        if (x >= radius && x < width - radius && y >= radius && y < height - radius)
         {
-            var row = MangaScreentoneShaderMath.Reflect(y + dy, height) * width;
-            var limit = reach[dy + radius];
-            for (var dx = -limit; dx <= limit; dx++)
+            for (var dy = -radius; dy <= radius; dy++)
             {
-                var distance = dx * dx + dy * dy;
-                var value = input[row + MangaScreentoneShaderMath.Reflect(x + dx, width)];
-                var difference = value - center;
-                var weight = Hlsl.Exp(distance * spaceCoefficient + difference * difference * colorCoefficient);
-                weighted += weight * value;
-                sum += weight;
+                var origin = (y + dy) * width + x;
+                var limit = reach[dy + radius];
+                for (var dx = -limit; dx <= limit; dx++)
+                {
+                    var distance = dx * dx + dy * dy;
+                    var value = input[origin + dx];
+                    var difference = value - center;
+                    var weight = Hlsl.Exp(distance * spaceCoefficient + difference * difference * colorCoefficient);
+                    weighted += weight * value;
+                    sum += weight;
+                }
+            }
+        }
+        else
+        {
+            for (var dy = -radius; dy <= radius; dy++)
+            {
+                var row = MangaScreentoneShaderMath.Reflect(y + dy, height) * width;
+                var limit = reach[dy + radius];
+                for (var dx = -limit; dx <= limit; dx++)
+                {
+                    var distance = dx * dx + dy * dy;
+                    var value = input[row + MangaScreentoneShaderMath.Reflect(x + dx, width)];
+                    var difference = value - center;
+                    var weight = Hlsl.Exp(distance * spaceCoefficient + difference * difference * colorCoefficient);
+                    weighted += weight * value;
+                    sum += weight;
+                }
             }
         }
         output[y * width + x] = weighted / sum;
