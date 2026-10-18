@@ -11,6 +11,8 @@ internal sealed class MangaScreentoneCustomEffect(IGraphicsDevicesAndContext dev
 {
     public float Amount { set => SetValue((int)EffectImpl.Properties.Amount, value); }
 
+    public bool KeepTransparent { set => SetValue((int)EffectImpl.Properties.KeepTransparent, value ? 1f : 0f); }
+
     [CustomEffect(2)]
     private sealed class EffectImpl : D2D1CustomShaderEffectImplBase<EffectImpl>
     {
@@ -23,6 +25,17 @@ internal sealed class MangaScreentoneCustomEffect(IGraphicsDevicesAndContext dev
             set
             {
                 _cb.Amount = Math.Clamp(value, 0f, 1f);
+                UpdateConstants();
+            }
+        }
+
+        [CustomEffectProperty(PropertyType.Float, (int)Properties.KeepTransparent)]
+        public float KeepTransparent
+        {
+            get => _cb.KeepTransparent;
+            set
+            {
+                _cb.KeepTransparent = value > 0.5f ? 1f : 0f;
                 UpdateConstants();
             }
         }
@@ -84,7 +97,7 @@ internal sealed class MangaScreentoneCustomEffect(IGraphicsDevicesAndContext dev
         private struct ConstantBuffer
         {
             public float Amount;
-            public float Pad0;
+            public float KeepTransparent;
             public float Pad1;
             public float Pad2;
         }
@@ -92,6 +105,7 @@ internal sealed class MangaScreentoneCustomEffect(IGraphicsDevicesAndContext dev
         public enum Properties
         {
             Amount = 0,
+            KeepTransparent = 1,
         }
     }
 }
