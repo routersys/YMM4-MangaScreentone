@@ -204,6 +204,21 @@ public sealed class MangaScreentonePipelineTests
     }
 
     [Fact]
+    public void TheWhiteLinesCutLongThinStrokesOutOfTheSolidBlackOnly()
+    {
+        using var pipeline = CreatePipeline();
+        var source = Scene(512, 384);
+        var on = Render(pipeline, source, 512, 384, Parameters(blackPoint: 0.6f, ink: 0f, border: 0f));
+        var off = Render(pipeline, source, 512, 384, Parameters(blackPoint: 0.6f, ink: 0f, border: 0f, whiteLines: false));
+
+        var turnedWhite = Enumerable.Range(0, on.Length).Count(index => off[index] == unchecked((int)0xFF000000) && on[index] == unchecked((int)0xFFFFFFFF));
+        var turnedBlack = Enumerable.Range(0, on.Length).Count(index => off[index] == unchecked((int)0xFFFFFFFF) && on[index] == unchecked((int)0xFF000000));
+
+        Assert.True(turnedWhite > 40, $"{turnedWhite}");
+        Assert.True(turnedBlack > 0, $"{turnedBlack}");
+    }
+
+    [Fact]
     public void TheSameInputGivesTheSameOutputEveryTime()
     {
         using var first = CreatePipeline();

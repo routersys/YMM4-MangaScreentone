@@ -5,17 +5,17 @@ internal static class Scenes
     public static Bgra Pixel(int x, int y, int width, int height, double shift = 0d)
     {
         var unit = Math.Min(width, height);
-        var stroke = Math.Max(unit * 0.012, 1.2);
+        var stroke = Math.Max(unit * 0.0035, 1.2);
         var u = (x + 0.5) / width;
         var v = (y + 0.5) / height;
         var luminance = 0.97 - 0.12 * v;
         var tint = (Red: 0.94, Green: 0.97, Blue: 1.0);
         if (u is >= 0.06 and <= 0.30 && v is >= 0.18 and <= 0.92)
         {
-            luminance = 0.33 + shift;
+            luminance = 0.40 + shift;
             tint = (1.0, 1.0, 1.0);
             if (Math.Abs(u - 0.14) * width < stroke || Math.Abs(v - 0.55) * height < stroke * 0.8)
-                luminance = 0.15;
+                luminance = 0.30;
         }
 
         var sphereX = (u - 0.52) * width;
