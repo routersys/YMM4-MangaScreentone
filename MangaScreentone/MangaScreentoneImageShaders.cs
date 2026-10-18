@@ -76,7 +76,7 @@ internal readonly partial struct GrayShader(
     }
 }
 
-[ThreadGroupSize(DefaultThreadGroupSizes.XY)]
+[ThreadGroupSize(MangaScreentoneSettings.BlurGroupSize, MangaScreentoneSettings.BlurGroupSize, 1)]
 [GeneratedComputeShaderDescriptor]
 internal readonly partial struct GaussianBlurShader(
     ReadWriteBuffer<float> input,
@@ -95,19 +95,29 @@ internal readonly partial struct GaussianBlurShader(
     private readonly int radius = radius;
     private readonly int vertical = vertical;
 
+    [GroupShared(MangaScreentoneSettings.MaximumKernelLength)]
+    private static readonly float[] weights = null!;
+
     public void Execute()
     {
+        var factor = -0.5f / (sigma * sigma);
+        for (var tap = GroupIds.Index; tap < 2 * radius + 1; tap += MangaScreentoneSettings.BlurGroupSize * MangaScreentoneSettings.BlurGroupSize)
+        {
+            var distance = tap - radius;
+            weights[tap] = Hlsl.Exp(distance * distance * factor);
+        }
+        Hlsl.GroupMemoryBarrierWithGroupSync();
+
         var x = ThreadIds.X;
         var y = ThreadIds.Y;
         if (x >= width || y >= height)
             return;
 
-        var factor = -0.5f / (sigma * sigma);
         var sum = 0f;
         var weighted = 0f;
         for (var offset = -radius; offset <= radius; offset++)
         {
-            var weight = Hlsl.Exp(offset * offset * factor);
+            var weight = weights[offset + radius];
             var sampleX = vertical == 0 ? MangaScreentoneShaderMath.Reflect(x + offset, width) : x;
             var sampleY = vertical == 0 ? y : MangaScreentoneShaderMath.Reflect(y + offset, height);
             weighted += weight * input[sampleY * width + sampleX];
@@ -152,7 +162,7 @@ internal readonly partial struct BoxBlurShader(
     }
 }
 
-[ThreadGroupSize(DefaultThreadGroupSizes.XY)]
+[ThreadGroupSize(MangaScreentoneSettings.BlurGroupSize, MangaScreentoneSettings.BlurGroupSize, 1)]
 [GeneratedComputeShaderDescriptor]
 internal readonly partial struct MaskedBlurHorizontalShader(
     ReadWriteBuffer<float> gray,
@@ -173,20 +183,30 @@ internal readonly partial struct MaskedBlurHorizontalShader(
     private readonly float sigma = sigma;
     private readonly int radius = radius;
 
+    [GroupShared(MangaScreentoneSettings.MaximumKernelLength)]
+    private static readonly float[] weights = null!;
+
     public void Execute()
     {
+        var factor = -0.5f / (sigma * sigma);
+        for (var tap = GroupIds.Index; tap < 2 * radius + 1; tap += MangaScreentoneSettings.BlurGroupSize * MangaScreentoneSettings.BlurGroupSize)
+        {
+            var distance = tap - radius;
+            weights[tap] = Hlsl.Exp(distance * distance * factor);
+        }
+        Hlsl.GroupMemoryBarrierWithGroupSync();
+
         var x = ThreadIds.X;
         var y = ThreadIds.Y;
         if (x >= width || y >= height)
             return;
 
-        var factor = -0.5f / (sigma * sigma);
         var sum = 0f;
         var weightedGray = 0f;
         var weightedMask = 0f;
         for (var offset = -radius; offset <= radius; offset++)
         {
-            var weight = Hlsl.Exp(offset * offset * factor);
+            var weight = weights[offset + radius];
             var index = y * width + MangaScreentoneShaderMath.Reflect(x + offset, width);
             var open = ink[index] == 0u ? 1f : 0f;
             weightedGray += weight * gray[index] * open;
@@ -198,7 +218,7 @@ internal readonly partial struct MaskedBlurHorizontalShader(
     }
 }
 
-[ThreadGroupSize(DefaultThreadGroupSizes.XY)]
+[ThreadGroupSize(MangaScreentoneSettings.BlurGroupSize, MangaScreentoneSettings.BlurGroupSize, 1)]
 [GeneratedComputeShaderDescriptor]
 internal readonly partial struct MaskedBlurVerticalShader(
     ReadWriteBuffer<float> numerator,
@@ -219,20 +239,30 @@ internal readonly partial struct MaskedBlurVerticalShader(
     private readonly int radius = radius;
     private readonly float minimumWeight = minimumWeight;
 
+    [GroupShared(MangaScreentoneSettings.MaximumKernelLength)]
+    private static readonly float[] weights = null!;
+
     public void Execute()
     {
+        var factor = -0.5f / (sigma * sigma);
+        for (var tap = GroupIds.Index; tap < 2 * radius + 1; tap += MangaScreentoneSettings.BlurGroupSize * MangaScreentoneSettings.BlurGroupSize)
+        {
+            var distance = tap - radius;
+            weights[tap] = Hlsl.Exp(distance * distance * factor);
+        }
+        Hlsl.GroupMemoryBarrierWithGroupSync();
+
         var x = ThreadIds.X;
         var y = ThreadIds.Y;
         if (x >= width || y >= height)
             return;
 
-        var factor = -0.5f / (sigma * sigma);
         var sum = 0f;
         var weightedNumerator = 0f;
         var weightedDenominator = 0f;
         for (var offset = -radius; offset <= radius; offset++)
         {
-            var weight = Hlsl.Exp(offset * offset * factor);
+            var weight = weights[offset + radius];
             var index = MangaScreentoneShaderMath.Reflect(y + offset, height) * width + x;
             weightedNumerator += weight * numerator[index];
             weightedDenominator += weight * denominator[index];

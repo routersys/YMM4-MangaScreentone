@@ -231,9 +231,15 @@ internal sealed partial class MangaScreentonePipelineHost
         float sigma,
         int radius)
     {
-        context.For(width, height, new GaussianBlurShader(input, temporary, width, height, sigma, radius, 0));
+        context.For(
+            ThreadGroupAlignment.AlignX<GaussianBlurShader>(width),
+            ThreadGroupAlignment.AlignY<GaussianBlurShader>(height),
+            new GaussianBlurShader(input, temporary, width, height, sigma, radius, 0));
         context.Barrier(temporary);
-        context.For(width, height, new GaussianBlurShader(temporary, output, width, height, sigma, radius, 1));
+        context.For(
+            ThreadGroupAlignment.AlignX<GaussianBlurShader>(width),
+            ThreadGroupAlignment.AlignY<GaussianBlurShader>(height),
+            new GaussianBlurShader(temporary, output, width, height, sigma, radius, 1));
         context.Barrier(output);
     }
 
@@ -320,12 +326,16 @@ internal sealed partial class MangaScreentonePipelineHost
         context.For(width, height, new InkFinalShader(grid.Classes, grid.Labels, grid.StatA, grid.Ink, width, height, derived.InkMinArea));
         context.Barrier(grid.Ink);
 
-        context.For(width, height, new MaskedBlurHorizontalShader(
-            grid.Gray, grid.Ink, grid.BlurA, grid.BlurB, width, height, derived.ValueSigma, derived.ValueRadius));
+        context.For(
+            ThreadGroupAlignment.AlignX<MaskedBlurHorizontalShader>(width),
+            ThreadGroupAlignment.AlignY<MaskedBlurHorizontalShader>(height),
+            new MaskedBlurHorizontalShader(grid.Gray, grid.Ink, grid.BlurA, grid.BlurB, width, height, derived.ValueSigma, derived.ValueRadius));
         context.Barrier(grid.BlurA);
         context.Barrier(grid.BlurB);
-        context.For(width, height, new MaskedBlurVerticalShader(
-            grid.BlurA, grid.BlurB, grid.ValueA, width, height, derived.ValueSigma, derived.ValueRadius, MangaScreentoneSettings.ValueMinWeight));
+        context.For(
+            ThreadGroupAlignment.AlignX<MaskedBlurVerticalShader>(width),
+            ThreadGroupAlignment.AlignY<MaskedBlurVerticalShader>(height),
+            new MaskedBlurVerticalShader(grid.BlurA, grid.BlurB, grid.ValueA, width, height, derived.ValueSigma, derived.ValueRadius, MangaScreentoneSettings.ValueMinWeight));
         context.Barrier(grid.ValueA);
         for (var pass = 0; pass < 2; pass++)
         {
@@ -379,12 +389,12 @@ internal sealed partial class MangaScreentonePipelineHost
             context.For(width, height, new ClassFromLevelShader(current, grid.Classes, width, height, target));
             context.Barrier(grid.Classes);
             RecordComponents(in context, grid, grid.Classes, width, height, 0, AreaOnly);
-            context.For(width, height, new HoleCountShader(
-                current, grid.Labels, grid.StatA, grid.StatB, grid.StatC, width, height, fillRadius, target, derived.PlanMinRegion));
+            context.For(width, height, new HoleMarkShader(current, grid.Labels, grid.StatA, grid.Classes, width, height, target, derived.PlanMinRegion));
+            context.Barrier(grid.Classes);
+            context.For(width, height, new HoleCountShader(grid.Classes, grid.StatB, grid.StatC, width, height, fillRadius));
             context.Barrier(grid.StatB);
             context.Barrier(grid.StatC);
-            context.For(width, height, new HoleResolveShader(
-                current, grid.Labels, grid.StatA, grid.StatB, grid.StatC, next, width, height, fillRadius, target, derived.PlanMinRegion));
+            context.For(width, height, new HoleResolveShader(current, grid.Classes, grid.StatB, grid.StatC, next, width, height, fillRadius));
             context.Barrier(next);
             (current, next) = (next, current);
         }
