@@ -8,6 +8,7 @@
     <IsPackable>false</IsPackable>
     <AssemblyName>MangaScreentone.Tests</AssemblyName>
     <RootNamespace>MangaScreentone.Tests</RootNamespace>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
