@@ -382,6 +382,33 @@ public sealed class MangaScreentonePipelineTests
         Assert.Equal(Render(fresh, source, 256, 192, parameters), actual);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AWarmPipelineAllocatesNoManagedMemory(bool everyStageRuns)
+    {
+        using var pipeline = CreatePipeline();
+        var source = Scene(64, 48);
+        var destination = new int[source.Length];
+        var parameters = Parameters();
+        var variants = new[] { parameters, everyStageRuns ? parameters with { Gamma = 1.5f } : parameters };
+        for (var iteration = 0; iteration < 4; iteration++)
+            pipeline.Process(source, destination, 64, 48, in variants[iteration % 2]);
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        var minimum = long.MaxValue;
+        for (var iteration = 0; iteration < 16; iteration++)
+        {
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            pipeline.Process(source, destination, 64, 48, in variants[iteration % 2]);
+            minimum = Math.Min(minimum, GC.GetAllocatedBytesForCurrentThread() - before);
+        }
+
+        Assert.Equal(0, minimum);
+    }
+
     [Fact]
     public void AReclaimedGridIsAnalyzedAgain()
     {
