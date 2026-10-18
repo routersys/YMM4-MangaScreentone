@@ -8,7 +8,7 @@ internal static class SyntheticImage
     {
         var pixels = new byte[width * height * HarnessImage.BytesPerPixel];
         var unit = MathF.Min(width, height);
-        var strokeWidth = MathF.Max(unit * 0.005f, 1f);
+        var strokeWidth = MathF.Max(unit * 0.0035f, 1f);
         var speckleCell = MathF.Max(unit * 0.03f, 4f);
 
         for (var y = 0; y < height; y++)
@@ -22,11 +22,11 @@ internal static class SyntheticImage
 
                 if (u >= 0.06f && u <= 0.30f && v >= 0.18f && v <= 0.92f)
                 {
-                    luminance = 0.33f;
+                    luminance = 0.40f;
                     tint = (1f, 1f, 1f);
                     var seam = MathF.Abs(u - 0.14f) * width < strokeWidth || MathF.Abs(u - 0.22f + (v - 0.5f) * 0.08f) * width < strokeWidth * 0.8f || MathF.Abs(v - 0.55f) * height < strokeWidth * 0.7f;
                     if (seam)
-                        luminance = 0.15f;
+                        luminance = 0.30f;
                 }
 
                 var sphereX = (u - 0.52f) * width;
