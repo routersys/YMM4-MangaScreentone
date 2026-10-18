@@ -47,7 +47,9 @@ try
     }
 
     var image = arguments.Input is { } input ? HarnessImage.Load(input) : HarnessImage.Synthetic(ImageWidth, ImageHeight);
-    using var renderer = new HarnessRenderer(CanvasWidth, CanvasHeight, image);
+    using var renderer = arguments.Input is null
+        ? new HarnessRenderer(CanvasWidth, CanvasHeight, image)
+        : new HarnessRenderer(Math.Max(CanvasWidth, image.Width * 2), Math.Max(CanvasHeight, image.Height * 2), image);
     return arguments.Mode switch
     {
         HarnessMode.Golden => WriteGolden(renderer, image),
