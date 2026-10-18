@@ -193,4 +193,15 @@ public sealed class MangaScreentoneSettingsTests
         Assert.Equal(3, MangaScreentoneSettings.PrintSupersample);
         Assert.Equal(1, MangaScreentoneSettings.PrintSupersample * MangaScreentoneSettings.PrintSupersample % 2);
     }
+
+    [Theory]
+    [InlineData(-5f, 0)]
+    [InlineData(0f, 0)]
+    [InlineData(80f, 80)]
+    [InlineData(400f, 400)]
+    [InlineData(999f, 400)]
+    public void TheMarginIsInPixelsAt1024AndIsClamped(float margin, int expected)
+    {
+        Assert.Equal(expected, MangaScreentoneSettings.Derive(1024, 768, Parameters(margin: margin)).MarginPixels);
+    }
 }
