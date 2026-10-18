@@ -63,6 +63,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Resource Include="$(ShaderDirPath)MangaScreentone.cso" Link="Resources\Shader\MangaScreentone.cso" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Compile Include="..\YMM4-GitHubUpdateNotifier\GitHubUpdateNotifier\*.cs" LinkBase="GitHubUpdateNotifier" />
 	</ItemGroup>
 
